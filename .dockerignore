@@ -1,0 +1,9 @@
+# THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
+#
+# Generated on 2020-08-13T17:40:42Z by kres f4c4987-dirty.
+
+**
+!x509
+!go.mod
+!go.sum
+!.golangci.yml
