@@ -2,7 +2,7 @@
 
 # THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
 #
-# Generated on 2020-08-13T17:38:42Z by kres f4c4987-dirty.
+# Generated on 2020-08-17T13:49:58Z by kres 3d35a96-dirty.
 
 ARG TOOLCHAIN
 
@@ -28,6 +28,7 @@ COPY ./go.mod .
 COPY ./go.sum .
 RUN go mod download
 RUN go mod verify
+COPY ./tls ./tls
 COPY ./x509 ./x509
 RUN go list -mod=readonly all >/dev/null
 
