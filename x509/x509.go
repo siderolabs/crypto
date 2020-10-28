@@ -451,25 +451,34 @@ func NewCertificateFromCSRBytes(ca, key, csr []byte, setters ...Option) (crt *Ce
 }
 
 // NewKeyPair generates a certificate signed by the provided CA, and a private
-// key. The certifcate and private key are then used to create an
+// key. The certifcate and private key are then used to create a
 // tls.X509KeyPair.
-func NewKeyPair(ca *x509.Certificate, key interface{}, setters ...Option) (keypair *KeyPair, err error) {
-	csr, err := NewCertificateSigningRequest(key, setters...)
-	if err != nil {
-		return
+func NewKeyPair(ca *CertificateAuthority, setters ...Option) (keypair *KeyPair, err error) {
+	opts := NewDefaultOptions(setters...)
+
+	var (
+		csr      *CertificateSigningRequest
+		identity *PEMEncodedCertificateAndKey
+	)
+
+	if opts.RSA {
+		csr, identity, err = NewRSACSRAndIdentity(opts.DNSNames, opts.IPAddresses)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create RSA CSR and identity: %w", err)
+		}
+	} else {
+		csr, identity, err = NewEd25519CSRAndIdentity(opts.DNSNames, opts.IPAddresses)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Ed25519 CSR and identity: %w", err)
+		}
 	}
 
-	k, err := NewEd25519Key()
+	crt, err := NewCertificateFromCSRBytes(ca.CrtPEM, ca.KeyPEM, csr.X509CertificateRequestPEM, setters...)
 	if err != nil {
-		return
+		return nil, fmt.Errorf("failed to create new certificate: %w", err)
 	}
 
-	crt, err := NewCertificateFromCSR(ca, key, csr.X509CertificateRequest, setters...)
-	if err != nil {
-		return
-	}
-
-	x509KeyPair, err := tls.X509KeyPair(crt.X509CertificatePEM, k.PublicKeyPEM)
+	x509KeyPair, err := tls.X509KeyPair(crt.X509CertificatePEM, identity.Key)
 	if err != nil {
 		return
 	}
@@ -503,9 +512,9 @@ func NewCertificateAndKeyFromFiles(crt, key string) (p *PEMEncodedCertificateAnd
 	return p, nil
 }
 
-// NewCSRAndIdentity generates and PEM encoded certificate and key, along with a
+// NewEd25519CSRAndIdentity generates and PEM encoded certificate and key, along with a
 // CSR for the generated key.
-func NewCSRAndIdentity(dnsNames []string, ips []net.IP) (csr *CertificateSigningRequest, identity *PEMEncodedCertificateAndKey, err error) {
+func NewEd25519CSRAndIdentity(dnsNames []string, ips []net.IP) (csr *CertificateSigningRequest, identity *PEMEncodedCertificateAndKey, err error) {
 	var key *Ed25519Key
 
 	key, err = NewEd25519Key()
@@ -530,6 +539,43 @@ func NewCSRAndIdentity(dnsNames []string, ips []net.IP) (csr *CertificateSigning
 	opts := []Option{}
 	opts = append(opts, DNSNames(dnsNames))
 	opts = append(opts, IPAddresses(ips))
+
+	csr, err = NewCertificateSigningRequest(priv, opts...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return csr, identity, nil
+}
+
+// NewRSACSRAndIdentity generates and PEM encoded certificate and key, along with a
+// CSR for the generated key.
+func NewRSACSRAndIdentity(dnsNames []string, ips []net.IP) (csr *CertificateSigningRequest, identity *PEMEncodedCertificateAndKey, err error) {
+	var key *RSAKey
+
+	key, err = NewRSAKey()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	identity = &PEMEncodedCertificateAndKey{
+		Key: key.KeyPEM,
+	}
+
+	pemBlock, _ := pem.Decode(key.KeyPEM)
+	if pemBlock == nil {
+		return nil, nil, fmt.Errorf("failed to decode key")
+	}
+
+	priv, err := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	opts := []Option{}
+	opts = append(opts, DNSNames(dnsNames))
+	opts = append(opts, IPAddresses(ips))
+	opts = append(opts, RSA(true))
 
 	csr, err = NewCertificateSigningRequest(priv, opts...)
 	if err != nil {
