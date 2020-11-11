@@ -145,6 +145,8 @@ func (p *certificateProvider) manageUpdates(ctx context.Context) (err error) {
 				crt, err = x509.ParseCertificate(c.Certificate[0])
 
 				if err == nil {
+					log.Printf("issued certificate with fingerprint %s\n", talosx509.SPKIFingerprint(crt))
+
 					nextRenewal = time.Until(crt.NotAfter) / 2
 				} else {
 					log.Println("failed to parse current leaf certificate")

@@ -1,6 +1,6 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
 #
-# Generated on 2020-08-13T17:14:02Z by kres f4c4987.
+# Generated on 2020-11-11T19:40:41Z by kres latest.
 
 # common variables
 
@@ -8,13 +8,13 @@ SHA := $(shell git describe --match=none --always --abbrev=8 --dirty)
 TAG := $(shell git describe --tag --always --dirty)
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 ARTIFACTS := _out
-REGISTRY ?= docker.io
-USERNAME ?= autonomy
+REGISTRY ?= ghcr.io
+USERNAME ?= talos-systems
 REGISTRY_AND_USERNAME ?= $(REGISTRY)/$(USERNAME)
 GOFUMPT_VERSION ?= abc0db2c416aca0f60ea33c23c76665f6e7ba0b6
 GO_VERSION ?= 1.14
 TESTPKGS ?= ./...
-KRES_IMAGE ?= autonomy/kres:latest
+KRES_IMAGE ?= ghcr.io/talos-systems/kres:latest
 
 # docker build settings
 
@@ -34,7 +34,7 @@ COMMON_ARGS += --build-arg=USERNAME=$(USERNAME)
 COMMON_ARGS += --build-arg=TOOLCHAIN=$(TOOLCHAIN)
 COMMON_ARGS += --build-arg=GOFUMPT_VERSION=$(GOFUMPT_VERSION)
 COMMON_ARGS += --build-arg=TESTPKGS=$(TESTPKGS)
-TOOLCHAIN ?= docker.io/golang:1.14-alpine
+TOOLCHAIN ?= docker.io/golang:1.15-alpine
 
 # help menu
 
@@ -69,7 +69,7 @@ respectively.
 
 endef
 
-all: lint unit-tests
+all: unit-tests lint
 
 .PHONY: clean
 clean:  ## Cleans up all artifacts.
@@ -98,9 +98,6 @@ fmt:  ## Formats the source code
 base:  ## Prepare base toolchain
 	@$(MAKE) target-$@
 
-.PHONY: lint
-lint: lint-golangci-lint lint-gofumpt  ## Run all linters for the project.
-
 .PHONY: unit-tests
 unit-tests:  ## Performs unit tests
 	@$(MAKE) local-$@ DEST=$(ARTIFACTS)
@@ -113,10 +110,17 @@ unit-tests-race:  ## Performs unit tests with race detection enabled.
 coverage:  ## Upload coverage data to codecov.io.
 	bash -c "bash <(curl -s https://codecov.io/bash) -f $(ARTIFACTS)/coverage.txt -X fix"
 
+.PHONY: lint-markdown
+lint-markdown:  ## Runs markdownlint.
+	@$(MAKE) target-$@
+
+.PHONY: lint
+lint: lint-golangci-lint lint-gofumpt lint-markdown  ## Run all linters for the project.
+
 .PHONY: rekres
 rekres:
 	@docker pull $(KRES_IMAGE)
-	@docker run --rm -v $(PWD):/src -w /src $(KRES_IMAGE)
+	@docker run --rm -v $(PWD):/src -w /src -e GITHUB_TOKEN $(KRES_IMAGE)
 
 .PHONY: help
 help:  ## This help menu.
