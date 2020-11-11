@@ -1,7 +1,7 @@
 ---
 # THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
 #
-# Generated on 2020-08-13T17:14:02Z by kres f4c4987.
+# Generated on 2020-11-11T19:40:41Z by kres latest.
 
 kind: pipeline
 type: kubernetes
@@ -29,10 +29,10 @@ steps:
     path: /var/outer-run
   - name: docker-socket
     path: /var/run
-  - name: ssh
-    path: /root/.ssh
   - name: buildx
     path: /root/.docker/buildx
+  - name: ssh
+    path: /root/.ssh
 
 - name: base
   pull: always
@@ -44,29 +44,12 @@ steps:
     path: /var/outer-run
   - name: docker-socket
     path: /var/run
-  - name: ssh
-    path: /root/.ssh
   - name: buildx
     path: /root/.docker/buildx
+  - name: ssh
+    path: /root/.ssh
   depends_on:
   - setup-ci
-
-- name: lint
-  pull: always
-  image: autonomy/build-container:latest
-  commands:
-  - make lint
-  volumes:
-  - name: outer-docker-socket
-    path: /var/outer-run
-  - name: docker-socket
-    path: /var/run
-  - name: ssh
-    path: /root/.ssh
-  - name: buildx
-    path: /root/.docker/buildx
-  depends_on:
-  - base
 
 - name: unit-tests
   pull: always
@@ -78,10 +61,10 @@ steps:
     path: /var/outer-run
   - name: docker-socket
     path: /var/run
-  - name: ssh
-    path: /root/.ssh
   - name: buildx
     path: /root/.docker/buildx
+  - name: ssh
+    path: /root/.ssh
   depends_on:
   - base
 
@@ -95,10 +78,10 @@ steps:
     path: /var/outer-run
   - name: docker-socket
     path: /var/run
-  - name: ssh
-    path: /root/.ssh
   - name: buildx
     path: /root/.docker/buildx
+  - name: ssh
+    path: /root/.ssh
   depends_on:
   - base
 
@@ -115,12 +98,29 @@ steps:
     path: /var/outer-run
   - name: docker-socket
     path: /var/run
-  - name: ssh
-    path: /root/.ssh
   - name: buildx
     path: /root/.docker/buildx
+  - name: ssh
+    path: /root/.ssh
   depends_on:
   - unit-tests
+
+- name: lint
+  pull: always
+  image: autonomy/build-container:latest
+  commands:
+  - make lint
+  volumes:
+  - name: outer-docker-socket
+    path: /var/outer-run
+  - name: docker-socket
+    path: /var/run
+  - name: buildx
+    path: /root/.docker/buildx
+  - name: ssh
+    path: /root/.ssh
+  depends_on:
+  - base
 
 services:
 - name: docker
@@ -132,17 +132,16 @@ services:
   - --dns=8.8.4.4
   - --mtu=1500
   - --log-level=error
-  - --insecure-registry=http://registry.ci.svc:5000
   privileged: true
   volumes:
   - name: outer-docker-socket
     path: /var/outer-run
   - name: docker-socket
     path: /var/run
-  - name: ssh
-    path: /root/.ssh
   - name: buildx
     path: /root/.docker/buildx
+  - name: ssh
+    path: /root/.ssh
 
 volumes:
 - name: outer-docker-socket
