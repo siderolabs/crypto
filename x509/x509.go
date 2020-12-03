@@ -89,6 +89,7 @@ type Options struct {
 	Bits               int
 	RSA                bool
 	NotAfter           time.Time
+	NotBefore          time.Time
 }
 
 // Option is the functional option func.
@@ -153,6 +154,13 @@ func NotAfter(o time.Time) Option {
 	}
 }
 
+// NotBefore sets the validity bound describing when a certificate becomes valid.
+func NotBefore(o time.Time) Option {
+	return func(opts *Options) {
+		opts.NotBefore = o
+	}
+}
+
 // NewDefaultOptions initializes the Options struct with default values.
 func NewDefaultOptions(setters ...Option) *Options {
 	opts := &Options{
@@ -162,6 +170,7 @@ func NewDefaultOptions(setters ...Option) *Options {
 		Bits:               4096,
 		RSA:                false,
 		NotAfter:           time.Now().Add(DefaultCertificateValidityDuration),
+		NotBefore:          time.Now(),
 	}
 
 	for _, setter := range setters {
@@ -199,7 +208,7 @@ func NewSelfSignedCertificateAuthority(setters ...Option) (ca *CertificateAuthor
 			Organization: []string{opts.Organization},
 		},
 		SignatureAlgorithm:    opts.SignatureAlgorithm,
-		NotBefore:             time.Now(),
+		NotBefore:             opts.NotBefore,
 		NotAfter:              opts.NotAfter,
 		BasicConstraintsValid: true,
 		IsCA:                  true,
@@ -363,7 +372,7 @@ func NewCertificateFromCSR(ca *x509.Certificate, key interface{}, csr *x509.Cert
 		SerialNumber:          serialNumber,
 		Issuer:                ca.Subject,
 		Subject:               csr.Subject,
-		NotBefore:             time.Now(),
+		NotBefore:             opts.NotBefore,
 		NotAfter:              opts.NotAfter,
 		KeyUsage:              x509.KeyUsageDigitalSignature,
 		BasicConstraintsValid: false,
