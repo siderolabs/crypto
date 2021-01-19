@@ -70,6 +70,9 @@ type CertificateSigningRequest struct {
 // KeyPair represents a certificate and key pair.
 type KeyPair struct {
 	*tls.Certificate
+
+	CrtPEM []byte
+	KeyPEM []byte
 }
 
 // PEMEncodedCertificateAndKey represents a PEM encoded certificate and
@@ -228,6 +231,29 @@ func NewSelfSignedCertificateAuthority(setters ...Option) (ca *CertificateAuthor
 	}
 
 	return Ed25519CertificateAuthority(crt)
+}
+
+// NewCertificateAuthorityFromCertificateAndKey builds CertificateAuthority from PEMEncodedCertificateAndKey.
+func NewCertificateAuthorityFromCertificateAndKey(p *PEMEncodedCertificateAndKey, setters ...Option) (ca *CertificateAuthority, err error) {
+	opts := NewDefaultOptions(setters...)
+
+	ca = &CertificateAuthority{
+		CrtPEM: p.Crt,
+		KeyPEM: p.Key,
+	}
+
+	ca.Crt, err = p.GetCert()
+	if err != nil {
+		return
+	}
+
+	if opts.RSA {
+		ca.Key, err = p.GetRSAKey()
+	} else {
+		ca.Key, err = p.GetEd25519Key()
+	}
+
+	return
 }
 
 // NewCertificateSigningRequest creates a CSR. If the IPAddresses or DNSNames options are not
@@ -493,7 +519,9 @@ func NewKeyPair(ca *CertificateAuthority, setters ...Option) (keypair *KeyPair, 
 	}
 
 	keypair = &KeyPair{
-		&x509KeyPair,
+		Certificate: &x509KeyPair,
+		CrtPEM:      crt.X509CertificatePEM,
+		KeyPEM:      identity.Key,
 	}
 
 	return keypair, nil
@@ -519,6 +547,24 @@ func NewCertificateAndKeyFromFiles(crt, key string) (p *PEMEncodedCertificateAnd
 	p.Key = keyBytes
 
 	return p, nil
+}
+
+// NewCertificateAndKeyFromCertificateAuthority initializes and returns a
+// PEMEncodedCertificateAndKey from the CertificateAuthority.
+func NewCertificateAndKeyFromCertificateAuthority(ca *CertificateAuthority) *PEMEncodedCertificateAndKey {
+	return &PEMEncodedCertificateAndKey{
+		Crt: ca.CrtPEM,
+		Key: ca.KeyPEM,
+	}
+}
+
+// NewCertificateAndKeyFromKeyPair initializes and returns a
+// PEMEncodedCertificateAndKey from the KeyPair.
+func NewCertificateAndKeyFromKeyPair(keyPair *KeyPair) *PEMEncodedCertificateAndKey {
+	return &PEMEncodedCertificateAndKey{
+		Crt: keyPair.CrtPEM,
+		Key: keyPair.KeyPEM,
+	}
 }
 
 // NewEd25519CSRAndIdentity generates and PEM encoded certificate and key, along with a
@@ -668,6 +714,27 @@ func (p *PEMEncodedCertificateAndKey) GetRSAKey() (*rsa.PrivateKey, error) {
 	}
 
 	return key, nil
+}
+
+// GetEd25519Key parses PEM-encoded Ed25519 key.
+func (p *PEMEncodedCertificateAndKey) GetEd25519Key() (ed25519.PrivateKey, error) {
+	block, _ := pem.Decode(p.Key)
+	if block == nil {
+		return nil, fmt.Errorf("failed to parse PEM block")
+	}
+
+	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse Ed25519 key: %w", err)
+	}
+
+	ed25519Key, ok := key.(ed25519.PrivateKey)
+
+	if !ok {
+		return nil, fmt.Errorf("failed parsing Ed25519 key, got wrong key type")
+	}
+
+	return ed25519Key, nil
 }
 
 // NewCertficateAndKey generates a new key and certificate signed by a CA.
