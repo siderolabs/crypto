@@ -45,8 +45,9 @@ type Ed25519Key struct {
 
 // RSAKey represents an RSA key.
 type RSAKey struct {
-	keyRSA *rsa.PrivateKey
-	KeyPEM []byte
+	keyRSA       *rsa.PrivateKey
+	KeyPEM       []byte
+	PublicKeyPEM []byte
 }
 
 // ECDSAKey represents an ECDSA key.
@@ -370,9 +371,20 @@ func NewRSAKey() (key *RSAKey, err error) {
 		Bytes: keyBytes,
 	})
 
+	publicKeyBytes, err := x509.MarshalPKIXPublicKey(&keyRSA.PublicKey)
+	if err != nil {
+		return
+	}
+
+	publicKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: publicKeyBytes,
+	})
+
 	key = &RSAKey{
-		keyRSA: keyRSA,
-		KeyPEM: keyPEM,
+		keyRSA:       keyRSA,
+		KeyPEM:       keyPEM,
+		PublicKeyPEM: publicKeyPEM,
 	}
 
 	return key, nil
