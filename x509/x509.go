@@ -83,6 +83,11 @@ type PEMEncodedCertificateAndKey struct {
 	Key []byte
 }
 
+// PEMEncodedKey represents a PEM encoded private key.
+type PEMEncodedKey struct {
+	Key []byte
+}
+
 // Options is the functional options struct.
 type Options struct {
 	CommonName         string
@@ -747,6 +752,110 @@ func (p *PEMEncodedCertificateAndKey) GetEd25519Key() (ed25519.PrivateKey, error
 	}
 
 	return ed25519Key, nil
+}
+
+// UnmarshalYAML implements the yaml.Unmarshaler interface for
+// PEMEncodedKey. It is expected that the Key is a base64
+// encoded string in the YAML file. This function decodes the strings into byte
+// slices.
+func (p *PEMEncodedKey) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var aux struct {
+		Key string `yaml:"key"`
+	}
+
+	if err := unmarshal(&aux); err != nil {
+		return err
+	}
+
+	decodedKey, err := base64.StdEncoding.DecodeString(aux.Key)
+	if err != nil {
+		return err
+	}
+
+	p.Key = decodedKey
+
+	return nil
+}
+
+// MarshalYAML implements the yaml.Marshaler interface for
+// PEMEncodedCertificateAndKey. It is expected that the Crt and Key are a base64
+// encoded string in the YAML file. This function encodes the byte slices into
+// strings.
+func (p *PEMEncodedKey) MarshalYAML() (interface{}, error) {
+	var aux struct {
+		Key string `yaml:"key"`
+	}
+
+	aux.Key = base64.StdEncoding.EncodeToString(p.Key)
+
+	return aux, nil
+}
+
+// GetRSAKey parses PEM-encoded RSA key.
+func (p *PEMEncodedKey) GetRSAKey() (*RSAKey, error) {
+	block, _ := pem.Decode(p.Key)
+	if block == nil {
+		return nil, fmt.Errorf("failed to parse PEM block")
+	}
+
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse RSA key: %w", err)
+	}
+
+	publicKeyBytes, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode public key: %w", err)
+	}
+
+	publicKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: publicKeyBytes,
+	})
+
+	return &RSAKey{
+		keyRSA:       key,
+		KeyPEM:       p.Key,
+		PublicKeyPEM: publicKeyPEM,
+	}, nil
+}
+
+// GetEd25519Key parses PEM-encoded Ed25519 key.
+func (p *PEMEncodedKey) GetEd25519Key() (*Ed25519Key, error) {
+	block, _ := pem.Decode(p.Key)
+	if block == nil {
+		return nil, fmt.Errorf("failed to parse PEM block")
+	}
+
+	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse Ed25519 key: %w", err)
+	}
+
+	ed25519Key, ok := key.(ed25519.PrivateKey)
+
+	if !ok {
+		return nil, fmt.Errorf("failed parsing Ed25519 key, got wrong key type")
+	}
+
+	publicKey := ed25519Key.Public()
+
+	pubBytes, err := x509.MarshalPKIXPublicKey(publicKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed encoding public key: %w", err)
+	}
+
+	pubPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "ED25519 PUBLIC KEY",
+		Bytes: pubBytes,
+	})
+
+	return &Ed25519Key{
+		PrivateKey:    ed25519Key,
+		PublicKey:     publicKey.(ed25519.PublicKey),
+		PrivateKeyPEM: p.Key,
+		PublicKeyPEM:  pubPEM,
+	}, nil
 }
 
 // NewCertficateAndKey generates a new key and certificate signed by a CA.

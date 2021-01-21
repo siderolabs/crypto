@@ -8,6 +8,10 @@ package x509_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
+
 	"github.com/talos-systems/crypto/x509"
 )
 
@@ -60,4 +64,50 @@ func TestNewKeyPair(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPEMEncodedKeyRSA(t *testing.T) {
+	key, err := x509.NewRSAKey()
+	require.NoError(t, err)
+
+	encoded := &x509.PEMEncodedKey{
+		Key: key.KeyPEM,
+	}
+
+	marshaled, err := yaml.Marshal(encoded)
+	require.NoError(t, err)
+
+	var decoded x509.PEMEncodedKey
+
+	require.NoError(t, yaml.Unmarshal(marshaled, &decoded))
+
+	decodedKey, err := decoded.GetRSAKey()
+	require.NoError(t, err)
+
+	assert.Equal(t, key.KeyPEM, decodedKey.KeyPEM)
+	assert.Equal(t, key.PublicKeyPEM, decodedKey.PublicKeyPEM)
+}
+
+func TestPEMEncodedKeyEd25519(t *testing.T) {
+	key, err := x509.NewEd25519Key()
+	require.NoError(t, err)
+
+	encoded := &x509.PEMEncodedKey{
+		Key: key.PrivateKeyPEM,
+	}
+
+	marshaled, err := yaml.Marshal(encoded)
+	require.NoError(t, err)
+
+	var decoded x509.PEMEncodedKey
+
+	require.NoError(t, yaml.Unmarshal(marshaled, &decoded))
+
+	decodedKey, err := decoded.GetEd25519Key()
+	require.NoError(t, err)
+
+	assert.Equal(t, key.PrivateKey, decodedKey.PrivateKey)
+	assert.Equal(t, key.PublicKey, decodedKey.PublicKey)
+	assert.Equal(t, key.PrivateKeyPEM, decodedKey.PrivateKeyPEM)
+	assert.Equal(t, key.PublicKeyPEM, decodedKey.PublicKeyPEM)
 }
