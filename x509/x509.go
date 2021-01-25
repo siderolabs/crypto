@@ -514,12 +514,12 @@ func NewKeyPair(ca *CertificateAuthority, setters ...Option) (keypair *KeyPair, 
 	)
 
 	if opts.RSA {
-		csr, identity, err = NewRSACSRAndIdentity(opts.DNSNames, opts.IPAddresses)
+		csr, identity, err = NewRSACSRAndIdentity(setters...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create RSA CSR and identity: %w", err)
 		}
 	} else {
-		csr, identity, err = NewEd25519CSRAndIdentity(opts.DNSNames, opts.IPAddresses)
+		csr, identity, err = NewEd25519CSRAndIdentity(setters...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Ed25519 CSR and identity: %w", err)
 		}
@@ -586,7 +586,7 @@ func NewCertificateAndKeyFromKeyPair(keyPair *KeyPair) *PEMEncodedCertificateAnd
 
 // NewEd25519CSRAndIdentity generates and PEM encoded certificate and key, along with a
 // CSR for the generated key.
-func NewEd25519CSRAndIdentity(dnsNames []string, ips []net.IP) (csr *CertificateSigningRequest, identity *PEMEncodedCertificateAndKey, err error) {
+func NewEd25519CSRAndIdentity(setters ...Option) (csr *CertificateSigningRequest, identity *PEMEncodedCertificateAndKey, err error) {
 	var key *Ed25519Key
 
 	key, err = NewEd25519Key()
@@ -608,11 +608,7 @@ func NewEd25519CSRAndIdentity(dnsNames []string, ips []net.IP) (csr *Certificate
 		return nil, nil, err
 	}
 
-	opts := []Option{}
-	opts = append(opts, DNSNames(dnsNames))
-	opts = append(opts, IPAddresses(ips))
-
-	csr, err = NewCertificateSigningRequest(priv, opts...)
+	csr, err = NewCertificateSigningRequest(priv, setters...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -622,7 +618,7 @@ func NewEd25519CSRAndIdentity(dnsNames []string, ips []net.IP) (csr *Certificate
 
 // NewRSACSRAndIdentity generates and PEM encoded certificate and key, along with a
 // CSR for the generated key.
-func NewRSACSRAndIdentity(dnsNames []string, ips []net.IP) (csr *CertificateSigningRequest, identity *PEMEncodedCertificateAndKey, err error) {
+func NewRSACSRAndIdentity(setters ...Option) (csr *CertificateSigningRequest, identity *PEMEncodedCertificateAndKey, err error) {
 	var key *RSAKey
 
 	key, err = NewRSAKey()
@@ -644,12 +640,7 @@ func NewRSACSRAndIdentity(dnsNames []string, ips []net.IP) (csr *CertificateSign
 		return nil, nil, err
 	}
 
-	opts := []Option{}
-	opts = append(opts, DNSNames(dnsNames))
-	opts = append(opts, IPAddresses(ips))
-	opts = append(opts, RSA(true))
-
-	csr, err = NewCertificateSigningRequest(priv, opts...)
+	csr, err = NewCertificateSigningRequest(priv, setters...)
 	if err != nil {
 		return nil, nil, err
 	}
