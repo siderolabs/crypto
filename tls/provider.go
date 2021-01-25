@@ -81,7 +81,7 @@ func (p *certificateProvider) update() (ca []byte, cert tls.Certificate, err err
 		identity *talosx509.PEMEncodedCertificateAndKey
 	)
 
-	csr, identity, err = talosx509.NewEd25519CSRAndIdentity(p.dnsNames, p.ips)
+	csr, identity, err = talosx509.NewEd25519CSRAndIdentity(talosx509.DNSNames(p.dnsNames), talosx509.IPAddresses(p.ips))
 	if err != nil {
 		return nil, cert, err
 	}
