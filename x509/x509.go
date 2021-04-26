@@ -459,6 +459,10 @@ func (k *RSAKey) GetPublicKeyPEM() []byte {
 func NewCertificateFromCSR(ca *x509.Certificate, key interface{}, csr *x509.CertificateRequest, setters ...Option) (crt *Certificate, err error) {
 	opts := NewDefaultOptions(setters...)
 
+	if err = csr.CheckSignature(); err != nil {
+		return nil, fmt.Errorf("failed verifying CSR signature: %w", err)
+	}
+
 	serialNumber, err := NewSerialNumber()
 	if err != nil {
 		return nil, err
