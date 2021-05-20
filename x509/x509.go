@@ -96,6 +96,8 @@ type PEMEncodedKey struct {
 }
 
 // Options is the functional options struct.
+//
+//nolint:govet
 type Options struct {
 	CommonName         string
 	Organization       string
@@ -247,7 +249,7 @@ func NewSelfSignedCertificateAuthority(setters ...Option) (ca *CertificateAuthor
 		DNSNames:    opts.DNSNames,
 	}
 
-	switch opts.SignatureAlgorithm { //nolint: exhaustive
+	switch opts.SignatureAlgorithm { //nolint:exhaustive
 	case x509.SHA512WithRSA:
 		return RSACertificateAuthority(crt, opts)
 	case x509.PureEd25519:
@@ -576,7 +578,7 @@ func NewKeyPair(ca *CertificateAuthority, setters ...Option) (keypair *KeyPair, 
 		identity *PEMEncodedCertificateAndKey
 	)
 
-	switch ca.Crt.SignatureAlgorithm { //nolint: exhaustive
+	switch ca.Crt.SignatureAlgorithm { //nolint:exhaustive
 	case x509.SHA512WithRSA:
 		csr, identity, err = NewRSACSRAndIdentity(setters...)
 		if err != nil {
@@ -1005,8 +1007,6 @@ func (p *PEMEncodedKey) GetECDSAKey() (*ECDSAKey, error) {
 }
 
 // NewCertficateAndKey generates a new key and certificate signed by a CA.
-//
-//nolint: gocyclo
 func NewCertficateAndKey(crt *x509.Certificate, key interface{}, setters ...Option) (p *PEMEncodedCertificateAndKey, err error) {
 	var (
 		c        *Certificate
@@ -1081,8 +1081,8 @@ func Hash(crt *x509.Certificate) string {
 
 // RSACertificateAuthority creates an RSA CA.
 func RSACertificateAuthority(template *x509.Certificate, opts *Options) (ca *CertificateAuthority, err error) {
-	key, e := rsa.GenerateKey(rand.Reader, opts.Bits)
-	if e != nil {
+	key, err := rsa.GenerateKey(rand.Reader, opts.Bits)
+	if err != nil {
 		return
 	}
 
@@ -1092,8 +1092,8 @@ func RSACertificateAuthority(template *x509.Certificate, opts *Options) (ca *Cer
 		Bytes: keyBytes,
 	})
 
-	crtDER, e := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
-	if e != nil {
+	crtDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	if err != nil {
 		return
 	}
 
@@ -1119,13 +1119,13 @@ func RSACertificateAuthority(template *x509.Certificate, opts *Options) (ca *Cer
 
 // ECDSACertificateAuthority creates an ECDSA CA.
 func ECDSACertificateAuthority(template *x509.Certificate) (ca *CertificateAuthority, err error) {
-	key, e := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if e != nil {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
 		return
 	}
 
-	keyBytes, e := x509.MarshalECPrivateKey(key)
-	if e != nil {
+	keyBytes, err := x509.MarshalECPrivateKey(key)
+	if err != nil {
 		return
 	}
 

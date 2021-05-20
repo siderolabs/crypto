@@ -2,7 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//nolint: scopelint,goconst
 package x509_test
 
 import (
@@ -17,6 +16,8 @@ import (
 )
 
 func TestNewKeyPair(t *testing.T) {
+	t.Parallel()
+
 	rsaCA, err := x509.NewSelfSignedCertificateAuthority(x509.RSA(true))
 	if err != nil {
 		t.Fatal(err)
@@ -66,7 +67,10 @@ func TestNewKeyPair(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			_, err := x509.NewKeyPair(tt.args.ca, tt.args.setters...)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewKeyPair() error = %v, wantErr %v", err, tt.wantErr)
@@ -78,7 +82,9 @@ func TestNewKeyPair(t *testing.T) {
 }
 
 func TestNewKeyPairViaPEM(t *testing.T) {
-	tests := []struct {
+	t.Parallel()
+
+	tests := []struct { //nolint:govet
 		name string
 		opt  x509.Option
 	}{
@@ -97,7 +103,10 @@ func TestNewKeyPairViaPEM(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			opts := []x509.Option{
 				tt.opt,
 				x509.Organization("kubernetes"),
@@ -122,7 +131,10 @@ func TestNewKeyPairViaPEM(t *testing.T) {
 	}
 }
 
+//nolint:goconst
 func TestNewKeyViaPEM(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		algo string
@@ -142,7 +154,10 @@ func TestNewKeyViaPEM(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			var keyPEM *x509.PEMEncodedKey
 
 			switch tt.algo {
@@ -197,6 +212,8 @@ func TestNewKeyViaPEM(t *testing.T) {
 }
 
 func TestPEMEncodedKeyRSA(t *testing.T) {
+	t.Parallel()
+
 	key, err := x509.NewRSAKey()
 	require.NoError(t, err)
 
@@ -219,6 +236,8 @@ func TestPEMEncodedKeyRSA(t *testing.T) {
 }
 
 func TestPEMEncodedKeyEd25519(t *testing.T) {
+	t.Parallel()
+
 	key, err := x509.NewEd25519Key()
 	require.NoError(t, err)
 
@@ -243,6 +262,8 @@ func TestPEMEncodedKeyEd25519(t *testing.T) {
 }
 
 func TestPEMEncodedKeyECDSA(t *testing.T) {
+	t.Parallel()
+
 	key, err := x509.NewECDSAKey()
 	require.NoError(t, err)
 

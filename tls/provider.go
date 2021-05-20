@@ -35,8 +35,9 @@ type Generator interface {
 	Identity(csr *talosx509.CertificateSigningRequest) (ca, crt []byte, err error)
 }
 
+//nolint:govet
 type certificateProvider struct {
-	sync.RWMutex
+	rw sync.RWMutex
 
 	generator Generator
 
@@ -68,8 +69,7 @@ func NewRenewingCertificateProvider(generator Generator, dnsNames []string, ips 
 
 	provider.updateCertificates(ca, &cert)
 
-	//nolint: errcheck
-	go provider.manageUpdates(context.TODO())
+	go provider.manageUpdates(context.TODO()) //nolint:errcheck
 
 	return provider, nil
 }
@@ -105,8 +105,8 @@ func (p *certificateProvider) GetCA() ([]byte, error) {
 		return nil, errors.New("no provider")
 	}
 
-	p.RLock()
-	defer p.RUnlock()
+	p.rw.RLock()
+	defer p.rw.RUnlock()
 
 	return p.ca, nil
 }
@@ -116,8 +116,8 @@ func (p *certificateProvider) GetCertificate(h *tls.ClientHelloInfo) (*tls.Certi
 		return nil, errors.New("no provider")
 	}
 
-	p.RLock()
-	defer p.RUnlock()
+	p.rw.RLock()
+	defer p.rw.RUnlock()
 
 	return p.crt, nil
 }
@@ -127,8 +127,8 @@ func (p *certificateProvider) GetClientCertificate(*tls.CertificateRequestInfo) 
 }
 
 func (p *certificateProvider) updateCertificates(ca []byte, cert *tls.Certificate) {
-	p.Lock()
-	defer p.Unlock()
+	p.rw.Lock()
+	defer p.rw.Unlock()
 
 	p.ca = ca
 	p.crt = cert
@@ -138,8 +138,7 @@ func (p *certificateProvider) manageUpdates(ctx context.Context) (err error) {
 	nextRenewal := talosx509.DefaultCertificateValidityDuration
 
 	for ctx.Err() == nil {
-		//nolint: errcheck
-		if c, _ := p.GetCertificate(nil); c != nil {
+		if c, _ := p.GetCertificate(nil); c != nil { //nolint:errcheck
 			if len(c.Certificate) > 0 {
 				var crt *x509.Certificate
 				crt, err = x509.ParseCertificate(c.Certificate[0])

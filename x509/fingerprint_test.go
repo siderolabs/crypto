@@ -64,6 +64,8 @@ yuGnBXj8ytqU0CwIPX4WecigUCAkVDNx
 -----END CERTIFICATE-----`
 
 func TestSPKIFingerprints(t *testing.T) {
+	t.Parallel()
+
 	fingerprint1, err := x509.SPKIFingerprintFromPEM([]byte(certPEM1))
 	if err != nil {
 		t.Fatal(err)
