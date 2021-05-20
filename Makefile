@@ -1,6 +1,6 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
 #
-# Generated on 2020-11-11T19:40:41Z by kres latest.
+# Generated on 2021-05-20T11:52:28Z by kres latest.
 
 # common variables
 
@@ -12,7 +12,10 @@ REGISTRY ?= ghcr.io
 USERNAME ?= talos-systems
 REGISTRY_AND_USERNAME ?= $(REGISTRY)/$(USERNAME)
 GOFUMPT_VERSION ?= abc0db2c416aca0f60ea33c23c76665f6e7ba0b6
-GO_VERSION ?= 1.14
+GO_VERSION ?= 1.16
+PROTOBUF_GO_VERSION ?= 1.25.0
+GRPC_GO_VERSION ?= 1.1.0
+GRPC_GATEWAY_VERSION ?= 2.4.0
 TESTPKGS ?= ./...
 KRES_IMAGE ?= ghcr.io/talos-systems/kres:latest
 
@@ -33,12 +36,15 @@ COMMON_ARGS += --build-arg=TAG=$(TAG)
 COMMON_ARGS += --build-arg=USERNAME=$(USERNAME)
 COMMON_ARGS += --build-arg=TOOLCHAIN=$(TOOLCHAIN)
 COMMON_ARGS += --build-arg=GOFUMPT_VERSION=$(GOFUMPT_VERSION)
+COMMON_ARGS += --build-arg=PROTOBUF_GO_VERSION=$(PROTOBUF_GO_VERSION)
+COMMON_ARGS += --build-arg=GRPC_GO_VERSION=$(GRPC_GO_VERSION)
+COMMON_ARGS += --build-arg=GRPC_GATEWAY_VERSION=$(GRPC_GATEWAY_VERSION)
 COMMON_ARGS += --build-arg=TESTPKGS=$(TESTPKGS)
-TOOLCHAIN ?= docker.io/golang:1.15-alpine
+TOOLCHAIN ?= docker.io/golang:1.16-alpine
 
 # help menu
 
-export define HELP_MENU_HEADER
+define HELP_MENU_HEADER
 # Getting Started
 
 To build this project, you must have the following installed:
@@ -126,4 +132,3 @@ rekres:
 help:  ## This help menu.
 	@echo "$$HELP_MENU_HEADER"
 	@grep -E '^[a-zA-Z%_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
-
