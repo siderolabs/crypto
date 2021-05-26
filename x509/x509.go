@@ -459,8 +459,7 @@ func (k *RSAKey) GetPublicKeyPEM() []byte {
 	return k.PublicKeyPEM
 }
 
-// NewCertificateFromCSR creates and signs X.509 certificate using the provided
-// CSR.
+// NewCertificateFromCSR creates and signs X.509 certificate using the provided CSR.
 func NewCertificateFromCSR(ca *x509.Certificate, key interface{}, csr *x509.CertificateRequest, setters ...Option) (*Certificate, error) {
 	opts := NewDefaultOptions(setters...)
 
@@ -790,7 +789,7 @@ func (p *PEMEncodedCertificateAndKey) GetKey() (interface{}, error) {
 	case PEMTypeECPrivate:
 		return p.GetECDSAKey()
 	default:
-		return nil, fmt.Errorf("unsupport key type: %q", block.Type)
+		return nil, fmt.Errorf("unsupported key type: %q", block.Type)
 	}
 }
 
@@ -956,7 +955,7 @@ func (p *PEMEncodedKey) GetEd25519Key() (*Ed25519Key, error) {
 	}
 
 	pubPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "ED25519 PUBLIC KEY",
+		Type:  PEMTypeEd25519Public,
 		Bytes: pubBytes,
 	})
 
@@ -999,8 +998,15 @@ func (p *PEMEncodedKey) GetECDSAKey() (*ECDSAKey, error) {
 	}, nil
 }
 
-// NewCertficateAndKey generates a new key and certificate signed by a CA.
+// NewCertficateAndKey is the NewCertificateAndKey with a typo in the name.
+//
+// Deprecated: use NewCertificateAndKey instead.
 func NewCertficateAndKey(crt *x509.Certificate, key interface{}, setters ...Option) (*PEMEncodedCertificateAndKey, error) {
+	return NewCertificateAndKey(crt, key, setters...)
+}
+
+// NewCertificateAndKey generates a new key and certificate signed by a CA.
+func NewCertificateAndKey(crt *x509.Certificate, key interface{}, setters ...Option) (*PEMEncodedCertificateAndKey, error) {
 	var (
 		k, priv  interface{}
 		pemBytes []byte
