@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net"
 	"sync"
 	"time"
 
@@ -44,17 +43,15 @@ type certificateProvider struct {
 	ca  []byte
 	crt *tls.Certificate
 
-	dnsNames []string
-	ips      []net.IP
+	csrOptions []talosx509.Option
 }
 
 // NewRenewingCertificateProvider returns a new CertificateProvider
 // which manages and updates its certificates using Generator.
-func NewRenewingCertificateProvider(generator Generator, dnsNames []string, ips []net.IP) (CertificateProvider, error) {
+func NewRenewingCertificateProvider(generator Generator, csrOptions ...talosx509.Option) (CertificateProvider, error) {
 	provider := &certificateProvider{
-		generator: generator,
-		dnsNames:  dnsNames,
-		ips:       ips,
+		generator:  generator,
+		csrOptions: csrOptions,
 	}
 
 	ca, cert, err := provider.update()
@@ -70,7 +67,7 @@ func NewRenewingCertificateProvider(generator Generator, dnsNames []string, ips 
 }
 
 func (p *certificateProvider) update() ([]byte, *tls.Certificate, error) {
-	csr, identity, err := talosx509.NewEd25519CSRAndIdentity(talosx509.DNSNames(p.dnsNames), talosx509.IPAddresses(p.ips))
+	csr, identity, err := talosx509.NewEd25519CSRAndIdentity(p.csrOptions...)
 	if err != nil {
 		return nil, nil, err
 	}
