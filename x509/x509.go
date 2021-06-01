@@ -100,7 +100,7 @@ type PEMEncodedKey struct {
 //nolint:govet
 type Options struct {
 	CommonName         string
-	Organization       string
+	Organizations      []string
 	SignatureAlgorithm x509.SignatureAlgorithm
 	IPAddresses        []net.IP
 	DNSNames           []string
@@ -119,10 +119,10 @@ func CommonName(o string) Option {
 	}
 }
 
-// Organization sets the subject organization of the certificate.
-func Organization(o string) Option {
+// Organization sets the subject organizations of the certificate.
+func Organization(o ...string) Option {
 	return func(opts *Options) {
-		opts.Organization = o
+		opts.Organizations = o
 	}
 }
 
@@ -233,7 +233,7 @@ func NewSelfSignedCertificateAuthority(setters ...Option) (*CertificateAuthority
 	crt := &x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			Organization: []string{opts.Organization},
+			Organization: opts.Organizations,
 		},
 		SignatureAlgorithm:    opts.SignatureAlgorithm,
 		NotBefore:             opts.NotBefore,
@@ -292,7 +292,7 @@ func NewCertificateSigningRequest(key interface{}, setters ...Option) (*Certific
 		DNSNames:    opts.DNSNames,
 		Subject: pkix.Name{
 			CommonName:   opts.CommonName,
-			Organization: []string{opts.Organization},
+			Organization: opts.Organizations,
 		},
 	}
 
