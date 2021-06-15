@@ -262,7 +262,7 @@ func NewSelfSignedCertificateAuthority(setters ...Option) (*CertificateAuthority
 }
 
 // NewCertificateAuthorityFromCertificateAndKey builds CertificateAuthority from PEMEncodedCertificateAndKey.
-func NewCertificateAuthorityFromCertificateAndKey(p *PEMEncodedCertificateAndKey, setters ...Option) (*CertificateAuthority, error) {
+func NewCertificateAuthorityFromCertificateAndKey(p *PEMEncodedCertificateAndKey) (*CertificateAuthority, error) {
 	ca := &CertificateAuthority{
 		CrtPEM: p.Crt,
 		KeyPEM: p.Key,
