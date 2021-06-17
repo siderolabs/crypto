@@ -107,6 +107,8 @@ type Options struct {
 	Bits               int
 	NotAfter           time.Time
 	NotBefore          time.Time
+	KeyUsage           x509.KeyUsage
+	ExtKeyUsage        []x509.ExtKeyUsage
 }
 
 // Option is the functional option func.
@@ -156,6 +158,20 @@ func Bits(o int) Option {
 	}
 }
 
+// KeyUsage sets the bitmap of the KeyUsage* constants.
+func KeyUsage(o x509.KeyUsage) Option {
+	return func(opts *Options) {
+		opts.KeyUsage = o
+	}
+}
+
+// ExtKeyUsage sets the ExtKeyUsage* constants.
+func ExtKeyUsage(o []x509.ExtKeyUsage) Option {
+	return func(opts *Options) {
+		opts.ExtKeyUsage = o
+	}
+}
+
 // RSA sets a flag for indicating that the requested operation should be
 // performed under the context of RSA instead of the default Ed25519.
 func RSA(o bool) Option {
@@ -199,6 +215,11 @@ func NewDefaultOptions(setters ...Option) *Options {
 		Bits:               4096,
 		NotAfter:           time.Now().Add(DefaultCertificateValidityDuration),
 		NotBefore:          time.Now(),
+		KeyUsage:           x509.KeyUsageDigitalSignature,
+		ExtKeyUsage: []x509.ExtKeyUsage{
+			x509.ExtKeyUsageServerAuth,
+			x509.ExtKeyUsageClientAuth,
+		},
 	}
 
 	for _, setter := range setters {
@@ -484,15 +505,12 @@ func NewCertificateFromCSR(ca *x509.Certificate, key interface{}, csr *x509.Cert
 		Subject:               csr.Subject,
 		NotBefore:             opts.NotBefore,
 		NotAfter:              opts.NotAfter,
-		KeyUsage:              x509.KeyUsageDigitalSignature,
+		KeyUsage:              opts.KeyUsage,
+		ExtKeyUsage:           opts.ExtKeyUsage,
 		BasicConstraintsValid: false,
 		IsCA:                  false,
-		ExtKeyUsage: []x509.ExtKeyUsage{
-			x509.ExtKeyUsageServerAuth,
-			x509.ExtKeyUsageClientAuth,
-		},
-		IPAddresses: csr.IPAddresses,
-		DNSNames:    csr.DNSNames,
+		IPAddresses:           csr.IPAddresses,
+		DNSNames:              csr.DNSNames,
 	}
 
 	crtDER, err := x509.CreateCertificate(rand.Reader, template, ca, csr.PublicKey, key)
