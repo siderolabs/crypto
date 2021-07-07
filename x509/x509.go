@@ -862,6 +862,24 @@ func (p *PEMEncodedCertificateAndKey) GetECDSAKey() (*ecdsa.PrivateKey, error) {
 	return ecdsaKey, nil
 }
 
+// DeepCopy implements DeepCopy interface.
+func (p *PEMEncodedCertificateAndKey) DeepCopy() *PEMEncodedCertificateAndKey {
+	if p == nil {
+		return nil
+	}
+
+	out := new(PEMEncodedCertificateAndKey)
+	p.DeepCopyInto(out)
+
+	return out
+}
+
+// DeepCopyInto implements DeepCopy interface.
+func (p *PEMEncodedCertificateAndKey) DeepCopyInto(out *PEMEncodedCertificateAndKey) {
+	out.Crt = append([]byte(nil), p.Crt...)
+	out.Key = append([]byte(nil), p.Key...)
+}
+
 // UnmarshalYAML implements the yaml.Unmarshaler interface for
 // PEMEncodedKey. It is expected that the Key is a base64
 // encoded string in the YAML file. This function decodes the strings into byte
@@ -1014,6 +1032,23 @@ func (p *PEMEncodedKey) GetECDSAKey() (*ECDSAKey, error) {
 		KeyPEM:       p.Key,
 		PublicKeyPEM: pubPEM,
 	}, nil
+}
+
+// DeepCopy implements DeepCopy interface.
+func (p *PEMEncodedKey) DeepCopy() *PEMEncodedKey {
+	if p == nil {
+		return nil
+	}
+
+	out := new(PEMEncodedKey)
+	p.DeepCopyInto(out)
+
+	return out
+}
+
+// DeepCopyInto implements DeepCopy interface.
+func (p *PEMEncodedKey) DeepCopyInto(out *PEMEncodedKey) {
+	out.Key = append([]byte(nil), p.Key...)
 }
 
 // NewCertficateAndKey is the NewCertificateAndKey with a typo in the name.
