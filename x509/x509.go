@@ -192,6 +192,19 @@ func ECDSA(o bool) Option {
 	}
 }
 
+// ECDSASHA512 sets a flag for indicating that the requested operation should be
+// performed under the context of ECDSA with SHA512 instead of the default Ed25519.
+//
+// Note: this is only used for compatibility with previous version of the library,
+// new code should always use ECDSA(true).
+func ECDSASHA512(o bool) Option {
+	return func(opts *Options) {
+		if o {
+			opts.SignatureAlgorithm = x509.ECDSAWithSHA512
+		}
+	}
+}
+
 // NotAfter sets the validity bound describing when a certificate expires.
 func NotAfter(o time.Time) Option {
 	return func(opts *Options) {
@@ -1183,20 +1196,7 @@ func RSACertificateAuthority(template *x509.Certificate, opts *Options) (*Certif
 
 // ECDSACertificateAuthority creates an ECDSA CA.
 func ECDSACertificateAuthority(template *x509.Certificate) (*CertificateAuthority, error) {
-	var curve elliptic.Curve
-
-	switch template.SignatureAlgorithm { //nolint:exhaustive
-	case x509.ECDSAWithSHA256:
-		curve = elliptic.P256()
-	case x509.ECDSAWithSHA384:
-		curve = elliptic.P384()
-	case x509.ECDSAWithSHA512:
-		curve = elliptic.P521()
-	default:
-		return nil, fmt.Errorf("unsupported signature algorithm: %s", template.SignatureAlgorithm)
-	}
-
-	key, err := ecdsa.GenerateKey(curve, rand.Reader)
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return nil, err
 	}

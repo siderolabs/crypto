@@ -5,6 +5,7 @@
 package x509_test
 
 import (
+	stdx509 "crypto/x509"
 	"testing"
 	"time"
 
@@ -85,20 +86,29 @@ func TestNewKeyPairViaPEM(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct { //nolint:govet
-		name string
-		opt  x509.Option
+		name            string
+		opt             x509.Option
+		expectedSigAlgo stdx509.SignatureAlgorithm
 	}{
 		{
-			name: "valid RSA",
-			opt:  x509.RSA(true),
+			name:            "valid RSA",
+			opt:             x509.RSA(true),
+			expectedSigAlgo: stdx509.SHA512WithRSA,
 		},
 		{
-			name: "valid Ed25519",
-			opt:  x509.RSA(false),
+			name:            "valid Ed25519",
+			opt:             x509.RSA(false),
+			expectedSigAlgo: stdx509.PureEd25519,
 		},
 		{
-			name: "valid ECDSA",
-			opt:  x509.ECDSA(true),
+			name:            "valid ECDSA",
+			opt:             x509.ECDSA(true),
+			expectedSigAlgo: stdx509.ECDSAWithSHA256,
+		},
+		{
+			name:            "valid ECDSA with SHA512",
+			opt:             x509.ECDSASHA512(true),
+			expectedSigAlgo: stdx509.ECDSAWithSHA512,
 		},
 	}
 
@@ -116,6 +126,8 @@ func TestNewKeyPairViaPEM(t *testing.T) {
 
 			ca, err := x509.NewSelfSignedCertificateAuthority(opts...)
 			require.NoError(t, err)
+
+			assert.Equal(t, tt.expectedSigAlgo, ca.Crt.SignatureAlgorithm)
 
 			pemEncoded := &x509.PEMEncodedCertificateAndKey{
 				Crt: ca.CrtPEM,
