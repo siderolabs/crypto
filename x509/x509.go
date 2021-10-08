@@ -187,7 +187,7 @@ func RSA(o bool) Option {
 func ECDSA(o bool) Option {
 	return func(opts *Options) {
 		if o {
-			opts.SignatureAlgorithm = x509.ECDSAWithSHA512
+			opts.SignatureAlgorithm = x509.ECDSAWithSHA256
 		}
 	}
 }
@@ -275,7 +275,7 @@ func NewSelfSignedCertificateAuthority(setters ...Option) (*CertificateAuthority
 		return RSACertificateAuthority(crt, opts)
 	case x509.PureEd25519:
 		return Ed25519CertificateAuthority(crt)
-	case x509.ECDSAWithSHA512:
+	case x509.ECDSAWithSHA256, x509.ECDSAWithSHA384, x509.ECDSAWithSHA512:
 		return ECDSACertificateAuthority(crt)
 	default:
 		return nil, fmt.Errorf("unsupported signature algorithm")
@@ -317,11 +317,20 @@ func NewCertificateSigningRequest(key interface{}, setters ...Option) (*Certific
 		},
 	}
 
-	switch key.(type) {
+	switch k := key.(type) {
 	case *rsa.PrivateKey:
 		template.SignatureAlgorithm = x509.SHA512WithRSA
 	case *ecdsa.PrivateKey:
-		template.SignatureAlgorithm = x509.ECDSAWithSHA512
+		switch k.Curve {
+		case elliptic.P224(), elliptic.P256():
+			template.SignatureAlgorithm = x509.ECDSAWithSHA256
+		case elliptic.P384():
+			template.SignatureAlgorithm = x509.ECDSAWithSHA384
+		case elliptic.P521():
+			template.SignatureAlgorithm = x509.ECDSAWithSHA512
+		default:
+			return nil, fmt.Errorf("unsupported ECDSA key curve: %s", k.Curve)
+		}
 	case ed25519.PrivateKey:
 		template.SignatureAlgorithm = x509.PureEd25519
 	}
@@ -600,7 +609,8 @@ func NewKeyPair(ca *CertificateAuthority, setters ...Option) (*KeyPair, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create RSA CSR and identity: %w", err)
 		}
-	case x509.ECDSAWithSHA512:
+	case x509.ECDSAWithSHA256, x509.ECDSAWithSHA384, x509.ECDSAWithSHA512:
+		// no matter what is the ECDSA algorithm for the CA, certificate generated will be ECDSA-P256-SHA256
 		csr, identity, err = NewECDSACSRAndIdentity(setters...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create ECDSA CSR and identity: %w", err)
@@ -610,6 +620,8 @@ func NewKeyPair(ca *CertificateAuthority, setters ...Option) (*KeyPair, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Ed25519 CSR and identity: %w", err)
 		}
+	default:
+		return nil, fmt.Errorf("unsupported signature algorithm: %s", ca.Crt.SignatureAlgorithm)
 	}
 
 	crt, err := NewCertificateFromCSRBytes(ca.CrtPEM, ca.KeyPEM, csr.X509CertificateRequestPEM, setters...)
@@ -1171,7 +1183,20 @@ func RSACertificateAuthority(template *x509.Certificate, opts *Options) (*Certif
 
 // ECDSACertificateAuthority creates an ECDSA CA.
 func ECDSACertificateAuthority(template *x509.Certificate) (*CertificateAuthority, error) {
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	var curve elliptic.Curve
+
+	switch template.SignatureAlgorithm { //nolint:exhaustive
+	case x509.ECDSAWithSHA256:
+		curve = elliptic.P256()
+	case x509.ECDSAWithSHA384:
+		curve = elliptic.P384()
+	case x509.ECDSAWithSHA512:
+		curve = elliptic.P521()
+	default:
+		return nil, fmt.Errorf("unsupported signature algorithm: %s", template.SignatureAlgorithm)
+	}
+
+	key, err := ecdsa.GenerateKey(curve, rand.Reader)
 	if err != nil {
 		return nil, err
 	}
