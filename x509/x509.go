@@ -901,8 +901,15 @@ func (p *PEMEncodedCertificateAndKey) DeepCopy() *PEMEncodedCertificateAndKey {
 
 // DeepCopyInto implements DeepCopy interface.
 func (p *PEMEncodedCertificateAndKey) DeepCopyInto(out *PEMEncodedCertificateAndKey) {
-	out.Crt = append([]byte(nil), p.Crt...)
-	out.Key = append([]byte(nil), p.Key...)
+	if p.Crt != nil {
+		out.Crt = make([]byte, len(p.Crt))
+		copy(out.Crt, p.Crt)
+	}
+
+	if p.Key != nil {
+		out.Key = make([]byte, len(p.Key))
+		copy(out.Key, p.Key)
+	}
 }
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface for
@@ -1073,7 +1080,10 @@ func (p *PEMEncodedKey) DeepCopy() *PEMEncodedKey {
 
 // DeepCopyInto implements DeepCopy interface.
 func (p *PEMEncodedKey) DeepCopyInto(out *PEMEncodedKey) {
-	out.Key = append([]byte(nil), p.Key...)
+	if p.Key != nil {
+		out.Key = make([]byte, len(p.Key))
+		copy(out.Key, p.Key)
+	}
 }
 
 // NewCertficateAndKey is the NewCertificateAndKey with a typo in the name.
