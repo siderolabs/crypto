@@ -86,13 +86,13 @@ type KeyPair struct {
 // PEMEncodedCertificateAndKey represents a PEM encoded certificate and
 // private key pair.
 type PEMEncodedCertificateAndKey struct {
-	Crt []byte
-	Key []byte
+	Crt []byte `json:"Crt"`
+	Key []byte `json:"Key"`
 }
 
 // PEMEncodedKey represents a PEM encoded private key.
 type PEMEncodedKey struct {
-	Key []byte
+	Key []byte `json:"Key"`
 }
 
 // Options is the functional options struct.
