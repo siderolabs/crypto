@@ -48,7 +48,7 @@ type certificateProvider struct {
 
 // NewRenewingCertificateProvider returns a new CertificateProvider
 // which manages and updates its certificates using Generator.
-func NewRenewingCertificateProvider(generator Generator, csrOptions ...talosx509.Option) (CertificateProvider, error) {
+func NewRenewingCertificateProvider(generator Generator, csrOptions ...talosx509.Option) (CertificateProvider, error) { //nolint:ireturn
 	provider := &certificateProvider{
 		generator:  generator,
 		csrOptions: csrOptions,

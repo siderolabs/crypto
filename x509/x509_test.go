@@ -96,6 +96,11 @@ func TestNewKeyPairViaPEM(t *testing.T) {
 			expectedSigAlgo: stdx509.SHA512WithRSA,
 		},
 		{
+			name:            "valid RSA-SHA256",
+			opt:             func(opts *x509.Options) { opts.SignatureAlgorithm = stdx509.SHA256WithRSA },
+			expectedSigAlgo: stdx509.SHA256WithRSA,
+		},
+		{
 			name:            "valid Ed25519",
 			opt:             x509.RSA(false),
 			expectedSigAlgo: stdx509.PureEd25519,

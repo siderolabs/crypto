@@ -2,7 +2,7 @@
 
 # THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
 #
-# Generated on 2021-05-20T11:41:34Z by kres latest.
+# Generated on 2022-06-22T12:59:39Z by kres 65530e7.
 
 ARG TOOLCHAIN
 
@@ -10,13 +10,13 @@ ARG TOOLCHAIN
 FROM scratch AS generate
 
 # runs markdownlint
-FROM node:14.8.0-alpine AS lint-markdown
-RUN npm i -g markdownlint-cli@0.23.2
-RUN npm i sentences-per-line@0.2.1
+FROM node:18.2.0-alpine AS lint-markdown
 WORKDIR /src
+RUN npm i -g markdownlint-cli@0.31.1
+RUN npm i sentences-per-line@0.2.1
 COPY .markdownlint.json .
 COPY ./README.md ./README.md
-RUN markdownlint --ignore "**/node_modules/**" --ignore '**/hack/chglog/**' --rules /node_modules/sentences-per-line/index.js .
+RUN markdownlint --ignore "CHANGELOG.md" --ignore "**/node_modules/**" --ignore '**/hack/chglog/**' --rules node_modules/sentences-per-line/index.js .
 
 # base toolchain image
 FROM ${TOOLCHAIN} AS toolchain
@@ -27,12 +27,17 @@ FROM toolchain AS tools
 ENV GO111MODULE on
 ENV CGO_ENABLED 0
 ENV GOPATH /go
-RUN curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s -- -b /bin v1.38.0
+ARG GOLANGCILINT_VERSION
+RUN curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/${GOLANGCILINT_VERSION}/install.sh | bash -s -- -b /bin ${GOLANGCILINT_VERSION}
 ARG GOFUMPT_VERSION
-RUN cd $(mktemp -d) \
-	&& go mod init tmp \
-	&& go get mvdan.cc/gofumpt/gofumports@${GOFUMPT_VERSION} \
-	&& mv /go/bin/gofumports /bin/gofumports
+RUN go install mvdan.cc/gofumpt@${GOFUMPT_VERSION} \
+	&& mv /go/bin/gofumpt /bin/gofumpt
+ARG GOIMPORTS_VERSION
+RUN go install golang.org/x/tools/cmd/goimports@${GOIMPORTS_VERSION} \
+	&& mv /go/bin/goimports /bin/goimports
+ARG DEEPCOPY_VERSION
+RUN go install github.com/siderolabs/deep-copy@${DEEPCOPY_VERSION} \
+	&& mv /go/bin/deep-copy /bin/deep-copy
 
 # tools and sources
 FROM tools AS base
@@ -47,9 +52,11 @@ RUN --mount=type=cache,target=/go/pkg go list -mod=readonly all >/dev/null
 
 # runs gofumpt
 FROM base AS lint-gofumpt
-RUN find . -name '*.pb.go' | xargs -r rm
-RUN find . -name '*.pb.gw.go' | xargs -r rm
-RUN FILES="$(gofumports -l -local github.com/talos-systems/crypto .)" && test -z "${FILES}" || (echo -e "Source code is not formatted with 'gofumports -w -local github.com/talos-systems/crypto .':\n${FILES}"; exit 1)
+RUN FILES="$(gofumpt -l .)" && test -z "${FILES}" || (echo -e "Source code is not formatted with 'gofumpt -w .':\n${FILES}"; exit 1)
+
+# runs goimports
+FROM base AS lint-goimports
+RUN FILES="$(goimports -l -local github.com/talos-systems/crypto .)" && test -z "${FILES}" || (echo -e "Source code is not formatted with 'goimports -w -local github.com/talos-systems/crypto .':\n${FILES}"; exit 1)
 
 # runs golangci-lint
 FROM base AS lint-golangci-lint

@@ -173,7 +173,7 @@ func ExtKeyUsage(o []x509.ExtKeyUsage) Option {
 }
 
 // RSA sets a flag for indicating that the requested operation should be
-// performed under the context of RSA instead of the default Ed25519.
+// performed under the context of RSA-SHA512 instead of the default Ed25519.
 func RSA(o bool) Option {
 	return func(opts *Options) {
 		if o {
@@ -284,7 +284,7 @@ func NewSelfSignedCertificateAuthority(setters ...Option) (*CertificateAuthority
 	}
 
 	switch opts.SignatureAlgorithm { //nolint:exhaustive
-	case x509.SHA512WithRSA:
+	case x509.SHA512WithRSA, x509.SHA384WithRSA, x509.SHA256WithRSA:
 		return RSACertificateAuthority(crt, opts)
 	case x509.PureEd25519:
 		return Ed25519CertificateAuthority(crt)
@@ -617,7 +617,7 @@ func NewKeyPair(ca *CertificateAuthority, setters ...Option) (*KeyPair, error) {
 	)
 
 	switch ca.Crt.SignatureAlgorithm { //nolint:exhaustive
-	case x509.SHA512WithRSA:
+	case x509.SHA512WithRSA, x509.SHA256WithRSA, x509.SHA384WithRSA:
 		csr, identity, err = NewRSACSRAndIdentity(setters...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create RSA CSR and identity: %w", err)
@@ -950,7 +950,7 @@ func (p *PEMEncodedKey) MarshalYAML() (interface{}, error) {
 }
 
 // GetKey parses one of RSAKey, ECDSAKey or Ed25519Key.
-func (p *PEMEncodedKey) GetKey() (Key, error) {
+func (p *PEMEncodedKey) GetKey() (Key, error) { //nolint:ireturn
 	block, _ := pem.Decode(p.Key)
 	if block == nil {
 		return nil, fmt.Errorf("failed to parse PEM block")
@@ -1029,7 +1029,7 @@ func (p *PEMEncodedKey) GetEd25519Key() (*Ed25519Key, error) {
 
 	return &Ed25519Key{
 		PrivateKey:    ed25519Key,
-		PublicKey:     publicKey.(ed25519.PublicKey),
+		PublicKey:     publicKey.(ed25519.PublicKey), //nolint:forcetypeassert
 		PrivateKeyPEM: p.Key,
 		PublicKeyPEM:  pubPEM,
 	}, nil
@@ -1108,24 +1108,24 @@ func NewCertificateAndKey(crt *x509.Certificate, key interface{}, setters ...Opt
 			return nil, fmt.Errorf("failed to create new RSA key: %w", err)
 		}
 
-		priv = k.(*RSAKey).keyRSA
-		pemBytes = k.(*RSAKey).KeyPEM
+		priv = k.(*RSAKey).keyRSA     //nolint:forcetypeassert
+		pemBytes = k.(*RSAKey).KeyPEM //nolint:forcetypeassert
 	case *ecdsa.PrivateKey:
 		k, err = NewECDSAKey()
 		if err != nil {
 			return nil, fmt.Errorf("failed to create new RSA key: %w", err)
 		}
 
-		priv = k.(*ECDSAKey).keyEC
-		pemBytes = k.(*ECDSAKey).KeyPEM
+		priv = k.(*ECDSAKey).keyEC      //nolint:forcetypeassert
+		pemBytes = k.(*ECDSAKey).KeyPEM //nolint:forcetypeassert
 	case ed25519.PrivateKey:
 		k, err = NewEd25519Key()
 		if err != nil {
 			return nil, fmt.Errorf("failed to create new Ed25519 key: %w", err)
 		}
 
-		priv = k.(*Ed25519Key).PrivateKey
-		pemBytes = k.(*Ed25519Key).PrivateKeyPEM
+		priv = k.(*Ed25519Key).PrivateKey        //nolint:forcetypeassert
+		pemBytes = k.(*Ed25519Key).PrivateKeyPEM //nolint:forcetypeassert
 	}
 
 	csr, err := NewCertificateSigningRequest(priv, setters...)
