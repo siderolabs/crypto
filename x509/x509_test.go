@@ -6,6 +6,7 @@ package x509_test
 
 import (
 	stdx509 "crypto/x509"
+	"crypto/x509/pkix"
 	"testing"
 	"time"
 
@@ -300,4 +301,29 @@ func TestPEMEncodedKeyECDSA(t *testing.T) {
 
 	assert.Equal(t, key.KeyPEM, decodedKey.KeyPEM)
 	assert.Equal(t, key.PublicKeyPEM, decodedKey.PublicKeyPEM)
+}
+
+func TestNewCertificateFromCSR(t *testing.T) {
+	t.Parallel()
+
+	ca, err := x509.NewSelfSignedCertificateAuthority(x509.ECDSA(true))
+	require.NoError(t, err)
+
+	csr, _, err := x509.NewECDSACSRAndIdentity(x509.Organization("os:admin"))
+	require.NoError(t, err)
+
+	// sign the CSR usual way
+	crt1, err := x509.NewCertificateFromCSRBytes(ca.CrtPEM, ca.KeyPEM, csr.X509CertificateRequestPEM)
+	require.NoError(t, err)
+
+	// sign the CSR with overrides
+	crt2, err := x509.NewCertificateFromCSRBytes(ca.CrtPEM, ca.KeyPEM, csr.X509CertificateRequestPEM,
+		x509.OverrideSubject(func(subject *pkix.Name) {
+			subject.Organization = nil
+		}),
+	)
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"os:admin"}, crt1.X509Certificate.Subject.Organization)
+	assert.Equal(t, []string(nil), crt2.X509Certificate.Subject.Organization)
 }
