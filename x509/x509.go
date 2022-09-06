@@ -109,6 +109,9 @@ type Options struct {
 	NotBefore          time.Time
 	KeyUsage           x509.KeyUsage
 	ExtKeyUsage        []x509.ExtKeyUsage
+
+	// Used with CSR signing process to override fields in the certificate subject.
+	OverrideSubject func(*pkix.Name)
 }
 
 // Option is the functional option func.
@@ -216,6 +219,13 @@ func NotAfter(o time.Time) Option {
 func NotBefore(o time.Time) Option {
 	return func(opts *Options) {
 		opts.NotBefore = o
+	}
+}
+
+// OverrideSubject sets the option to override fields in the certificate subject when signing a CSR.
+func OverrideSubject(f func(*pkix.Name)) Option {
+	return func(opts *Options) {
+		opts.OverrideSubject = f
 	}
 }
 
@@ -533,6 +543,10 @@ func NewCertificateFromCSR(ca *x509.Certificate, key interface{}, csr *x509.Cert
 		IsCA:                  false,
 		IPAddresses:           csr.IPAddresses,
 		DNSNames:              csr.DNSNames,
+	}
+
+	if opts.OverrideSubject != nil {
+		opts.OverrideSubject(&template.Subject)
 	}
 
 	crtDER, err := x509.CreateCertificate(rand.Reader, template, ca, csr.PublicKey, key)
