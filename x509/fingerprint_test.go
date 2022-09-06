@@ -10,7 +10,7 @@ import (
 	"encoding/pem"
 	"testing"
 
-	"github.com/talos-systems/crypto/x509"
+	"github.com/siderolabs/crypto/x509"
 )
 
 const certPEM1 = `

@@ -20,9 +20,9 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"net"
+	"os"
 	"strings"
 	"time"
 )
@@ -661,14 +661,14 @@ func NewKeyPair(ca *CertificateAuthority, setters ...Option) (*KeyPair, error) {
 func NewCertificateAndKeyFromFiles(crt, key string) (*PEMEncodedCertificateAndKey, error) {
 	p := &PEMEncodedCertificateAndKey{}
 
-	crtBytes, err := ioutil.ReadFile(crt)
+	crtBytes, err := os.ReadFile(crt)
 	if err != nil {
 		return nil, err
 	}
 
 	p.Crt = crtBytes
 
-	keyBytes, err := ioutil.ReadFile(key)
+	keyBytes, err := os.ReadFile(key)
 	if err != nil {
 		return nil, err
 	}

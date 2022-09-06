@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	talosx509 "github.com/talos-systems/crypto/x509"
+	talosx509 "github.com/siderolabs/crypto/x509"
 )
 
 // CertificateProvider describes an interface by which TLS certificates may be managed.

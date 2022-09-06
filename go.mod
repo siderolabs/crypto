@@ -1,6 +1,6 @@
-module github.com/talos-systems/crypto
+module github.com/siderolabs/crypto
 
-go 1.18
+go 1.19
 
 require (
 	github.com/stretchr/testify v1.7.3
