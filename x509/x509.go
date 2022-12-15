@@ -27,6 +27,11 @@ import (
 	"time"
 )
 
+// Redacted is a special string that is used to indicate that a private key should be YAML-marshaled without the base64 encoding.
+//
+// If the value of a private key is exactly this string (in bytes), it will be marshaled as-is into YAML, without the base64 encoding.
+const Redacted = "******"
+
 // CertificateAuthority represents a CA.
 type CertificateAuthority struct {
 	Crt    *x509.Certificate
@@ -789,13 +794,18 @@ func (p *PEMEncodedCertificateAndKey) UnmarshalYAML(unmarshal func(interface{}) 
 		return err
 	}
 
-	decodedKey, err := base64.StdEncoding.DecodeString(aux.Key)
-	if err != nil {
-		return err
-	}
-
 	p.Crt = decodedCrt
-	p.Key = decodedKey
+
+	if aux.Key == Redacted {
+		p.Key = []byte(Redacted)
+	} else {
+		decodedKey, err := base64.StdEncoding.DecodeString(aux.Key)
+		if err != nil {
+			return err
+		}
+
+		p.Key = decodedKey
+	}
 
 	return nil
 }
@@ -811,7 +821,12 @@ func (p *PEMEncodedCertificateAndKey) MarshalYAML() (interface{}, error) {
 	}
 
 	aux.Crt = base64.StdEncoding.EncodeToString(p.Crt)
-	aux.Key = base64.StdEncoding.EncodeToString(p.Key)
+
+	if string(p.Key) == Redacted {
+		aux.Key = Redacted
+	} else {
+		aux.Key = base64.StdEncoding.EncodeToString(p.Key)
+	}
 
 	return aux, nil
 }
@@ -939,12 +954,16 @@ func (p *PEMEncodedKey) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 
-	decodedKey, err := base64.StdEncoding.DecodeString(aux.Key)
-	if err != nil {
-		return err
-	}
+	if aux.Key == Redacted {
+		p.Key = []byte(Redacted)
+	} else {
+		decodedKey, err := base64.StdEncoding.DecodeString(aux.Key)
+		if err != nil {
+			return err
+		}
 
-	p.Key = decodedKey
+		p.Key = decodedKey
+	}
 
 	return nil
 }
@@ -958,7 +977,11 @@ func (p *PEMEncodedKey) MarshalYAML() (interface{}, error) {
 		Key string `yaml:"key"`
 	}
 
-	aux.Key = base64.StdEncoding.EncodeToString(p.Key)
+	if string(p.Key) == Redacted {
+		aux.Key = Redacted
+	} else {
+		aux.Key = base64.StdEncoding.EncodeToString(p.Key)
+	}
 
 	return aux, nil
 }

@@ -7,6 +7,7 @@ package x509_test
 import (
 	stdx509 "crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/base64"
 	"testing"
 	"time"
 
@@ -326,4 +327,45 @@ func TestNewCertificateFromCSR(t *testing.T) {
 
 	assert.Equal(t, []string{"os:admin"}, crt1.X509Certificate.Subject.Organization)
 	assert.Equal(t, []string(nil), crt2.X509Certificate.Subject.Organization)
+}
+
+func TestPEMEncodedCertificateAndKeyYAMLMarshaling(t *testing.T) {
+	t.Parallel()
+
+	// when key is not set to redacted, it should be base64'd on marshaling
+
+	pair := &x509.PEMEncodedCertificateAndKey{
+		Crt: []byte("crt"),
+		Key: []byte("key"),
+	}
+
+	bytes, err := yaml.Marshal(pair)
+	require.NoError(t, err)
+
+	var m map[string]any
+
+	require.NoError(t, yaml.Unmarshal(bytes, &m))
+
+	assert.Equal(t, base64.StdEncoding.EncodeToString(pair.Key), m["key"])
+	assert.Equal(t, base64.StdEncoding.EncodeToString(pair.Crt), m["crt"])
+
+	// when the key is set to Redacted, it should be marshaled as-is, without base64 encoding
+
+	pair.Key = []byte(x509.Redacted)
+
+	bytes, err = yaml.Marshal(pair)
+	require.NoError(t, err)
+
+	require.NoError(t, yaml.Unmarshal(bytes, &m))
+
+	assert.Equal(t, x509.Redacted, m["key"])
+	assert.Equal(t, base64.StdEncoding.EncodeToString(pair.Crt), m["crt"])
+
+	// unmarshal should work with redacted key
+
+	var unmarshalPair x509.PEMEncodedCertificateAndKey
+
+	require.NoError(t, yaml.Unmarshal(bytes, &unmarshalPair))
+
+	assert.Equal(t, []byte(x509.Redacted), unmarshalPair.Key)
 }
