@@ -6,7 +6,7 @@ package tls_test
 
 import "testing"
 
-func TestEmpty(t *testing.T) {
+func TestEmpty(*testing.T) {
 	// added for accurate coverage estimation
 	//
 	// please remove it once any unit-test is added

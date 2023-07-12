@@ -98,7 +98,7 @@ func (p *certificateProvider) GetCA() ([]byte, error) {
 	return p.ca, nil
 }
 
-func (p *certificateProvider) GetCertificate(h *tls.ClientHelloInfo) (*tls.Certificate, error) {
+func (p *certificateProvider) GetCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) {
 	if p == nil {
 		return nil, errors.New("no provider")
 	}

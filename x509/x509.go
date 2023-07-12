@@ -941,6 +941,18 @@ func (p *PEMEncodedCertificateAndKey) DeepCopyInto(out *PEMEncodedCertificateAnd
 	}
 }
 
+// NewKeyFromFile loads a PEM-encoded key from a file.
+func NewKeyFromFile(keyPath string) (*PEMEncodedKey, error) {
+	keyBytes, err := os.ReadFile(keyPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read key file: %w", err)
+	}
+
+	return &PEMEncodedKey{
+		Key: keyBytes,
+	}, nil
+}
+
 // UnmarshalYAML implements the yaml.Unmarshaler interface for
 // PEMEncodedKey. It is expected that the Key is a base64
 // encoded string in the YAML file. This function decodes the strings into byte

@@ -8,6 +8,8 @@ import (
 	stdx509 "crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -228,6 +230,25 @@ func TestNewKeyViaPEM(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNewKeyFromFile(t *testing.T) {
+	t.Parallel()
+
+	key, err := x509.NewRSAKey()
+	require.NoError(t, err)
+
+	tmpDir := t.TempDir()
+
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "key.pem"), key.KeyPEM, 0o600))
+
+	loaded, err := x509.NewKeyFromFile(filepath.Join(tmpDir, "key.pem"))
+	require.NoError(t, err)
+
+	assert.Equal(t, key.KeyPEM, loaded.Key)
+
+	_, err = loaded.GetRSAKey()
+	require.NoError(t, err)
 }
 
 func TestPEMEncodedKeyRSA(t *testing.T) {
