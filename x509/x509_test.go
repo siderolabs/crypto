@@ -390,3 +390,28 @@ func TestPEMEncodedCertificateAndKeyYAMLMarshaling(t *testing.T) {
 
 	assert.Equal(t, []byte(x509.Redacted), unmarshalPair.Key)
 }
+
+func TestPEMEncodedCertificate(t *testing.T) {
+	t.Parallel()
+
+	ca, err := x509.NewSelfSignedCertificateAuthority(x509.ECDSA(true))
+	require.NoError(t, err)
+
+	pemEncoded := &x509.PEMEncodedCertificate{
+		Crt: ca.CrtPEM,
+	}
+
+	marshaled, err := yaml.Marshal(pemEncoded)
+	require.NoError(t, err)
+
+	var decoded x509.PEMEncodedCertificate
+
+	require.NoError(t, yaml.Unmarshal(marshaled, &decoded))
+
+	assert.Equal(t, ca.CrtPEM, decoded.Crt)
+
+	decodedCert, err := decoded.GetCert()
+	require.NoError(t, err)
+
+	assert.True(t, decodedCert.Equal(ca.Crt))
+}

@@ -100,6 +100,11 @@ type PEMEncodedKey struct {
 	Key []byte `json:"Key"`
 }
 
+// PEMEncodedCertificate represents a PEM encoded certificate.
+type PEMEncodedCertificate struct {
+	Crt []byte `json:"Crt"`
+}
+
 // Options is the functional options struct.
 //
 //nolint:govet
@@ -1132,6 +1137,78 @@ func (p *PEMEncodedKey) DeepCopyInto(out *PEMEncodedKey) {
 	if p.Key != nil {
 		out.Key = make([]byte, len(p.Key))
 		copy(out.Key, p.Key)
+	}
+}
+
+// UnmarshalYAML implements the yaml.Unmarshaler interface for
+// PEMEncodedCertificateAndKey. It is expected that the Crt is a base64
+// encoded string in the YAML file. This function decodes the strings into byte
+// slices.
+func (p *PEMEncodedCertificate) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var aux struct {
+		Crt string `yaml:"crt"`
+	}
+
+	if err := unmarshal(&aux); err != nil {
+		return err
+	}
+
+	decodedCrt, err := base64.StdEncoding.DecodeString(aux.Crt)
+	if err != nil {
+		return err
+	}
+
+	p.Crt = decodedCrt
+
+	return nil
+}
+
+// MarshalYAML implements the yaml.Marshaler interface for
+// PEMEncodedCertificate. It is expected that the Crt is a base64
+// encoded string in the YAML file. This function encodes the byte slices into
+// strings.
+func (p *PEMEncodedCertificate) MarshalYAML() (interface{}, error) {
+	var aux struct {
+		Crt string `yaml:"crt"`
+	}
+
+	aux.Crt = base64.StdEncoding.EncodeToString(p.Crt)
+
+	return aux, nil
+}
+
+// GetCert parses PEM-encoded certificate as x509.Certificate.
+func (p *PEMEncodedCertificate) GetCert() (*x509.Certificate, error) {
+	block, _ := pem.Decode(p.Crt)
+	if block == nil {
+		return nil, fmt.Errorf("failed to parse PEM block")
+	}
+
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse certificate: %w", err)
+	}
+
+	return cert, nil
+}
+
+// DeepCopy implements DeepCopy interface.
+func (p *PEMEncodedCertificate) DeepCopy() *PEMEncodedCertificate {
+	if p == nil {
+		return nil
+	}
+
+	out := new(PEMEncodedCertificate)
+	p.DeepCopyInto(out)
+
+	return out
+}
+
+// DeepCopyInto implements DeepCopy interface.
+func (p *PEMEncodedCertificate) DeepCopyInto(out *PEMEncodedCertificate) {
+	if p.Crt != nil {
+		out.Crt = make([]byte, len(p.Crt))
+		copy(out.Crt, p.Crt)
 	}
 }
 
