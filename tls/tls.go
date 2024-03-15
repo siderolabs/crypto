@@ -108,6 +108,29 @@ func WithCACertPEM(ca []byte) func(*tls.Config) error {
 	}
 }
 
+// WithDynamicClientCA declares a dynamic client CA which will be updated on each client request.
+//
+// This methods is for server-side TLS.
+// For client TLS, build the new `tls.Config` on each request.
+func WithDynamicClientCA(p CertificateProvider) func(*tls.Config) error {
+	return func(cfg *tls.Config) error {
+		cfg.GetConfigForClient = func(*tls.ClientHelloInfo) (*tls.Config, error) {
+			newCfg := cfg.Clone()
+
+			var err error
+
+			newCfg.ClientCAs, err = p.GetCACertPool()
+			if err != nil {
+				return nil, err
+			}
+
+			return newCfg, nil
+		}
+
+		return nil
+	}
+}
+
 func defaultConfig() *tls.Config {
 	return &tls.Config{
 		RootCAs:   x509.NewCertPool(),

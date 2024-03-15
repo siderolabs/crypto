@@ -19,8 +19,11 @@ import (
 
 // CertificateProvider describes an interface by which TLS certificates may be managed.
 type CertificateProvider interface {
-	// GetCA returns the active root CA.
+	// GetCA returns the active root CA certificate(s).
 	GetCA() ([]byte, error)
+
+	// GetCACertPool returns the active root CA certificates as a certificate pool.
+	GetCACertPool() (*x509.CertPool, error)
 
 	// GetCertificate returns the current certificate matching the given client request.
 	GetCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error)
@@ -40,8 +43,9 @@ type certificateProvider struct {
 
 	generator Generator
 
-	ca  []byte
-	crt *tls.Certificate
+	ca         []byte
+	caCertPool *x509.CertPool
+	crt        *tls.Certificate
 
 	csrOptions []talosx509.Option
 }
@@ -98,6 +102,17 @@ func (p *certificateProvider) GetCA() ([]byte, error) {
 	return p.ca, nil
 }
 
+func (p *certificateProvider) GetCACertPool() (*x509.CertPool, error) {
+	if p == nil {
+		return nil, errors.New("no provider")
+	}
+
+	p.rw.RLock()
+	defer p.rw.RUnlock()
+
+	return p.caCertPool, nil
+}
+
 func (p *certificateProvider) GetCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) {
 	if p == nil {
 		return nil, errors.New("no provider")
@@ -119,6 +134,9 @@ func (p *certificateProvider) updateCertificates(ca []byte, cert *tls.Certificat
 
 	p.ca = ca
 	p.crt = cert
+
+	p.caCertPool = x509.NewCertPool()
+	p.caCertPool.AppendCertsFromPEM(ca)
 }
 
 func (p *certificateProvider) manageUpdates(ctx context.Context) error {
