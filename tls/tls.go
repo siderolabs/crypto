@@ -140,10 +140,9 @@ func defaultConfig() *tls.Config {
 		SessionTicketsDisabled: true,
 		// TLS protocol, ECDHE key exchange algorithm, ECDSA digital signature algorithm, AES_256_GCM bulk encryption algorithm, and SHA384 hash algorithm.
 		CipherSuites: []uint16{tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384},
-		// Force the above cipher suites.
-		PreferServerCipherSuites: true,
 		// TLS 1.2
 		MinVersion: tls.VersionTLS12,
+		NextProtos: []string{"h2"},
 	}
 }
 
