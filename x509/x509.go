@@ -1083,7 +1083,7 @@ func (p *PEMEncodedKey) GetEd25519Key() (*Ed25519Key, error) {
 
 	return &Ed25519Key{
 		PrivateKey:    ed25519Key,
-		PublicKey:     publicKey.(ed25519.PublicKey), //nolint:forcetypeassert
+		PublicKey:     publicKey.(ed25519.PublicKey), //nolint:forcetypeassert,errcheck
 		PrivateKeyPEM: p.Key,
 		PublicKeyPEM:  pubPEM,
 	}, nil
@@ -1234,24 +1234,24 @@ func NewCertificateAndKey(crt *x509.Certificate, key interface{}, setters ...Opt
 			return nil, fmt.Errorf("failed to create new RSA key: %w", err)
 		}
 
-		priv = k.(*RSAKey).keyRSA     //nolint:forcetypeassert
-		pemBytes = k.(*RSAKey).KeyPEM //nolint:forcetypeassert
+		priv = k.(*RSAKey).keyRSA     //nolint:forcetypeassert,errcheck
+		pemBytes = k.(*RSAKey).KeyPEM //nolint:forcetypeassert,errcheck
 	case *ecdsa.PrivateKey:
 		k, err = NewECDSAKey()
 		if err != nil {
 			return nil, fmt.Errorf("failed to create new RSA key: %w", err)
 		}
 
-		priv = k.(*ECDSAKey).keyEC      //nolint:forcetypeassert
-		pemBytes = k.(*ECDSAKey).KeyPEM //nolint:forcetypeassert
+		priv = k.(*ECDSAKey).keyEC      //nolint:forcetypeassert,errcheck
+		pemBytes = k.(*ECDSAKey).KeyPEM //nolint:forcetypeassert,errcheck
 	case ed25519.PrivateKey:
 		k, err = NewEd25519Key()
 		if err != nil {
 			return nil, fmt.Errorf("failed to create new Ed25519 key: %w", err)
 		}
 
-		priv = k.(*Ed25519Key).PrivateKey        //nolint:forcetypeassert
-		pemBytes = k.(*Ed25519Key).PrivateKeyPEM //nolint:forcetypeassert
+		priv = k.(*Ed25519Key).PrivateKey        //nolint:forcetypeassert,errcheck
+		pemBytes = k.(*Ed25519Key).PrivateKeyPEM //nolint:forcetypeassert,errcheck
 	}
 
 	csr, err := NewCertificateSigningRequest(priv, setters...)
