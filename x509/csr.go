@@ -132,3 +132,17 @@ func NewECDSACSRAndIdentity(setters ...Option) (*CertificateSigningRequest, *PEM
 
 	return csr, identity, nil
 }
+
+// NewCSRAndIdentityFromCA generates a key matching the given CA certificate, and a CSR for the key.
+func NewCSRAndIdentityFromCA(caCrt *x509.Certificate, setters ...Option) (*CertificateSigningRequest, *PEMEncodedCertificateAndKey, error) {
+	switch caCrt.PublicKey.(type) {
+	case *rsa.PublicKey:
+		return NewRSACSRAndIdentity(setters...)
+	case *ecdsa.PublicKey:
+		return NewECDSACSRAndIdentity(setters...)
+	case ed25519.PublicKey:
+		return NewEd25519CSRAndIdentity(setters...)
+	default:
+		return nil, nil, fmt.Errorf("unsupported CA certificate public key type: %T", caCrt.PublicKey)
+	}
+}

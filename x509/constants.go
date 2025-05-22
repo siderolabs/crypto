@@ -13,6 +13,7 @@ const DefaultCertificateValidityDuration = 24 * time.Hour
 const (
 	PEMTypeRSAPrivate     = "RSA PRIVATE KEY"
 	PEMTypeRSAPublic      = "PUBLIC KEY"
+	PEMTypePrivate        = "PRIVATE KEY"
 	PEMTypeECPrivate      = "EC PRIVATE KEY"
 	PEMTypeECPublic       = "EC PUBLIC KEY"
 	PEMTypeEd25519Private = "ED25519 PRIVATE KEY"

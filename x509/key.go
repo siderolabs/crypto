@@ -257,6 +257,8 @@ func (p *PEMEncodedKey) GetKey() (Key, error) { //nolint:ireturn
 		return p.GetECDSAKey()
 	case PEMTypeEd25519Private:
 		return p.GetEd25519Key()
+	case PEMTypePrivate:
+		return p.GetPrivateKey()
 	default:
 		return nil, fmt.Errorf("unsupported key type %q", block.Type)
 	}
@@ -289,6 +291,75 @@ func (p *PEMEncodedKey) GetRSAKey() (*RSAKey, error) {
 		KeyPEM:       p.Key,
 		PublicKeyPEM: publicKeyPEM,
 	}, nil
+}
+
+// GetPrivateKey parses generic PEM-encoded key.
+func (p *PEMEncodedKey) GetPrivateKey() (Key, error) {
+	block, _ := pem.Decode(p.Key)
+	if block == nil {
+		return nil, fmt.Errorf("failed to parse PEM block")
+	}
+
+	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse key: %w", err)
+	}
+
+	switch key := key.(type) {
+	case *rsa.PrivateKey:
+		publicKeyBytes, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode public key: %w", err)
+		}
+
+		publicKeyPEM := pem.EncodeToMemory(&pem.Block{
+			Type:  PEMTypeRSAPublic,
+			Bytes: publicKeyBytes,
+		})
+
+		return &RSAKey{
+			keyRSA:       key,
+			KeyPEM:       p.Key,
+			PublicKeyPEM: publicKeyPEM,
+		}, nil
+	case *ecdsa.PrivateKey:
+		publicKeyBytes, err := x509.MarshalPKIXPublicKey(key.Public())
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode public key: %w", err)
+		}
+
+		publicKeyPEM := pem.EncodeToMemory(&pem.Block{
+			Type:  PEMTypeECPublic,
+			Bytes: publicKeyBytes,
+		})
+
+		return &ECDSAKey{
+			keyEC:        key,
+			KeyPEM:       p.Key,
+			PublicKeyPEM: publicKeyPEM,
+		}, nil
+	case ed25519.PrivateKey:
+		publicKey := key.Public()
+
+		publicKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode public key: %w", err)
+		}
+
+		publicKeyPEM := pem.EncodeToMemory(&pem.Block{
+			Type:  PEMTypeEd25519Public,
+			Bytes: publicKeyBytes,
+		})
+
+		return &Ed25519Key{
+			PrivateKey:    key,
+			PublicKey:     publicKey.(ed25519.PublicKey), //nolint:forcetypeassert,errcheck
+			PrivateKeyPEM: p.Key,
+			PublicKeyPEM:  publicKeyPEM,
+		}, nil
+	default:
+		return nil, fmt.Errorf("unsupported key type %T", key)
+	}
 }
 
 // GetEd25519Key parses PEM-encoded Ed25519 key.

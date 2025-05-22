@@ -110,6 +110,8 @@ func NewCertificateFromCSRBytes(ca, key, csr []byte, setters ...Option) (*Certif
 		caKey, err = x509.ParsePKCS8PrivateKey(keyPemBlock.Bytes)
 	case PEMTypeECPrivate:
 		caKey, err = x509.ParseECPrivateKey(keyPemBlock.Bytes)
+	case PEMTypePrivate:
+		caKey, err = x509.ParsePKCS8PrivateKey(keyPemBlock.Bytes)
 	default:
 		err = fmt.Errorf("unsupported PEM block: %v", keyPemBlock.Type)
 	}

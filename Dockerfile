@@ -2,7 +2,7 @@
 
 # THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
 #
-# Generated on 2025-05-21T15:18:29Z by kres 9f64b0d.
+# Generated on 2025-05-22T12:08:17Z by kres 9f64b0d.
 
 ARG TOOLCHAIN
 
@@ -19,7 +19,7 @@ RUN bunx markdownlint --ignore "CHANGELOG.md" --ignore "**/node_modules/**" --ig
 
 # base toolchain image
 FROM --platform=${BUILDPLATFORM} ${TOOLCHAIN} AS toolchain
-RUN apk --update --no-cache add bash curl build-base protoc protobuf-dev
+RUN apk --update --no-cache add bash curl build-base protoc protobuf-dev openssl
 
 # build tools
 FROM --platform=${BUILDPLATFORM} toolchain AS tools

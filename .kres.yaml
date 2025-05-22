@@ -2,3 +2,8 @@
 kind: service.CodeCov
 spec:
   targetThreshold: 45
+---
+kind: golang.Toolchain
+spec:
+    extraPackages:
+        - openssl

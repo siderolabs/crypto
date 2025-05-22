@@ -5,7 +5,13 @@
 package x509_test
 
 import (
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/rsa"
 	"encoding/base64"
+	"os/exec"
+	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -96,6 +102,80 @@ func TestNewCertificateAndKey(t *testing.T) {
 			require.NoError(t, err)
 
 			_, err = x509.NewCertificateAndKey(caCert, caKey)
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestCertificateKeyPEMOpenSSLInterop(t *testing.T) {
+	t.Parallel()
+
+	_, err := exec.LookPath("openssl")
+	if err != nil {
+		t.Skip("openssl not found, skipping test")
+	}
+
+	for _, test := range []struct { //nolint:govet
+		name string
+
+		opensslArgs     []string
+		expectedKeyType any
+	}{
+		{
+			name:        "RSA",
+			opensslArgs: []string{"-x509", "-newkey", "rsa:2048"},
+
+			expectedKeyType: &rsa.PrivateKey{},
+		},
+		{
+			name: "Ed25519",
+
+			opensslArgs:     []string{"-x509", "-newkey", "ed25519"},
+			expectedKeyType: ed25519.PrivateKey(nil),
+		},
+		{
+			name: "ECDSA",
+
+			opensslArgs:     []string{"-x509", "-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:prime256v1"},
+			expectedKeyType: &ecdsa.PrivateKey{},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			tmpDir := t.TempDir()
+
+			// generate a new self-signed certificate and key
+			output, err := exec.Command(
+				"openssl",
+				slices.Concat(
+					slices.Concat([]string{"req"}, test.opensslArgs),
+					[]string{
+						"-keyout", filepath.Join(tmpDir, "key.pem"), "-out", filepath.Join(tmpDir, "crt.pem"), "-days", "3650", "-nodes",
+						"-subj", "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=CommonNameOrHostname",
+					},
+				)...,
+			).CombinedOutput()
+			require.NoError(t, err, string(output))
+
+			crtAndKey, err := x509.NewCertificateAndKeyFromFiles(filepath.Join(tmpDir, "crt.pem"), filepath.Join(tmpDir, "key.pem"))
+			require.NoError(t, err)
+
+			_, err = crtAndKey.GetCert()
+			require.NoError(t, err)
+
+			k, err := crtAndKey.GetKey()
+			require.NoError(t, err)
+
+			require.IsType(t, test.expectedKeyType, k)
+
+			ca, err := x509.NewCertificateAuthorityFromCertificateAndKey(crtAndKey)
+			require.NoError(t, err)
+
+			csr, _, err := x509.NewCSRAndIdentityFromCA(ca.Crt, x509.Organization("test"), x509.CommonName("myself"))
+			require.NoError(t, err)
+
+			_, err = x509.NewCertificateFromCSRBytes(ca.CrtPEM, ca.KeyPEM, csr.X509CertificateRequestPEM)
 			require.NoError(t, err)
 		})
 	}

@@ -211,6 +211,8 @@ func (p *PEMEncodedCertificateAndKey) GetKey() (any, error) {
 		return p.GetEd25519Key()
 	case PEMTypeECPrivate:
 		return p.GetECDSAKey()
+	case PEMTypePrivate:
+		return p.GetPrivateKey()
 	default:
 		return nil, fmt.Errorf("unsupported key type: %q", block.Type)
 	}
@@ -265,6 +267,21 @@ func (p *PEMEncodedCertificateAndKey) GetECDSAKey() (*ecdsa.PrivateKey, error) {
 	}
 
 	return ecdsaKey, nil
+}
+
+// GetPrivateKey parses generic PEM-encoded key.
+func (p *PEMEncodedCertificateAndKey) GetPrivateKey() (any, error) {
+	block, _ := pem.Decode(p.Key)
+	if block == nil {
+		return nil, fmt.Errorf("failed to parse PEM block")
+	}
+
+	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse key: %w", err)
+	}
+
+	return key, nil
 }
 
 // DeepCopy implements DeepCopy interface.
