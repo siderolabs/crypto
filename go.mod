@@ -1,6 +1,6 @@
 module github.com/siderolabs/crypto
 
-go 1.22.1
+go 1.24.0
 
 require (
 	github.com/stretchr/testify v1.10.0

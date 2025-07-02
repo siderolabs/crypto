@@ -31,6 +31,27 @@ func NewSerialNumber() (*big.Int, error) {
 	return sn, nil
 }
 
+// NewSubjectKeyID generates a Subject Key Identifier (SKID) for an X.509 certificate.
+func NewSubjectKeyID() ([]byte, error) {
+	// The SKID is typically the SHA-1 hash of the public key, but SHA-1 is not FIPS-140-3 compliant.
+	//
+	// From the RFC 5280, Section 4.2.1.2:
+	// The subject key identifier extension provides a means of identifying
+	// certificates that contain a particular public key.
+	//
+	// For CA certificates, subject key identifiers SHOULD be derived from
+	// the public key or a method that generates unique values.
+	// ....
+	//
+	// Other methods of generating unique numbers are also acceptable.
+	skid := make([]byte, 20) // SHA-1 produces a 20-byte hash
+	if _, err := rand.Read(skid); err != nil {
+		return nil, err
+	}
+
+	return skid, nil
+}
+
 // Hash calculates the SHA-256 hash of the Subject Public Key Information (SPKI)
 // object in an x509 certificate (in DER encoding). It returns the full hash as
 // a hex encoded string (suitable for passing to Set.Allow). See

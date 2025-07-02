@@ -33,11 +33,17 @@ func NewSelfSignedCertificateAuthority(setters ...Option) (*CertificateAuthority
 		return nil, err
 	}
 
+	skID, err := NewSubjectKeyID()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create subject key identifier: %w", err)
+	}
+
 	crt := &x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: opts.Organizations,
 		},
+		SubjectKeyId:          skID,
 		SignatureAlgorithm:    opts.SignatureAlgorithm,
 		NotBefore:             opts.NotBefore,
 		NotAfter:              opts.NotAfter,

@@ -7,3 +7,7 @@ kind: golang.Toolchain
 spec:
     extraPackages:
         - openssl
+---
+kind: golang.UnitTests
+spec:
+  runFIPS: true

@@ -1,6 +1,6 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
 #
-# Generated on 2025-05-14T13:00:06Z by kres 5ad3e5f.
+# Generated on 2025-07-02T13:16:58Z by kres 5128bc1-dirty.
 
 # common variables
 
@@ -21,12 +21,12 @@ PROTOBUF_GO_VERSION ?= 1.36.6
 GRPC_GO_VERSION ?= 1.5.1
 GRPC_GATEWAY_VERSION ?= 2.26.3
 VTPROTOBUF_VERSION ?= 0.6.0
-GOIMPORTS_VERSION ?= 0.33.0
+GOIMPORTS_VERSION ?= 0.34.0
 GOMOCK_VERSION ?= 0.5.2
 DEEPCOPY_VERSION ?= v0.5.6
 GOLANGCILINT_VERSION ?= v2.1.6
 GOFUMPT_VERSION ?= v0.8.0
-GO_VERSION ?= 1.24.3
+GO_VERSION ?= 1.24.4
 GO_BUILDFLAGS ?=
 GO_LDFLAGS ?=
 CGO_ENABLED ?= 0
@@ -190,6 +190,10 @@ unit-tests:  ## Performs unit tests
 
 .PHONY: unit-tests-race
 unit-tests-race:  ## Performs unit tests with race detection enabled.
+	@$(MAKE) target-$@
+
+.PHONY: unit-tests-fips
+unit-tests-fips:  ## Performs unit tests with strict FIPS-140 mode.
 	@$(MAKE) target-$@
 
 .PHONY: lint-markdown

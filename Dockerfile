@@ -1,8 +1,8 @@
-# syntax = docker/dockerfile-upstream:1.15.1-labs
+# syntax = docker/dockerfile-upstream:1.16.0-labs
 
 # THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
 #
-# Generated on 2025-05-22T12:08:17Z by kres 9f64b0d.
+# Generated on 2025-07-02T13:16:58Z by kres 5128bc1-dirty.
 
 ARG TOOLCHAIN
 
@@ -10,7 +10,7 @@ ARG TOOLCHAIN
 FROM scratch AS generate
 
 # runs markdownlint
-FROM docker.io/oven/bun:1.2.13-alpine AS lint-markdown
+FROM docker.io/oven/bun:1.2.15-alpine AS lint-markdown
 WORKDIR /src
 RUN bun i markdownlint-cli@0.45.0 sentences-per-line@0.3.0
 COPY .markdownlint.json .
@@ -70,6 +70,12 @@ RUN --mount=type=cache,target=/root/.cache/go-build,id=crypto/root/.cache/go-bui
 FROM base AS lint-govulncheck
 WORKDIR /src
 RUN --mount=type=cache,target=/root/.cache/go-build,id=crypto/root/.cache/go-build --mount=type=cache,target=/go/pkg,id=crypto/go/pkg govulncheck ./...
+
+# runs unit-tests with strict FIPS-140 mode
+FROM base AS unit-tests-fips
+WORKDIR /src
+ARG TESTPKGS
+RUN --mount=type=cache,target=/root/.cache/go-build,id=crypto/root/.cache/go-build --mount=type=cache,target=/go/pkg,id=crypto/go/pkg --mount=type=cache,target=/tmp,id=crypto/tmp GOFIPS140=latest GODEBUG=fips140=only go test -v -count 1 ${TESTPKGS}
 
 # runs unit-tests with race detector
 FROM base AS unit-tests-race
