@@ -131,15 +131,20 @@ func WithDynamicClientCA(p CertificateProvider) func(*tls.Config) error {
 	}
 }
 
+// WithMinVersion sets the minimum TLS version to use.
+func WithMinVersion(version uint16) func(*tls.Config) error {
+	return func(cfg *tls.Config) error {
+		cfg.MinVersion = version
+
+		return nil
+	}
+}
+
 func defaultConfig() *tls.Config {
 	return &tls.Config{
-		RootCAs:   x509.NewCertPool(),
-		ClientCAs: x509.NewCertPool(),
-		// Use the X25519 elliptic curve for the ECDHE key exchange algorithm.
-		CurvePreferences:       []tls.CurveID{tls.X25519},
+		RootCAs:                x509.NewCertPool(),
+		ClientCAs:              x509.NewCertPool(),
 		SessionTicketsDisabled: true,
-		// TLS protocol, ECDHE key exchange algorithm, ECDSA digital signature algorithm, AES_256_GCM bulk encryption algorithm, and SHA384 hash algorithm.
-		CipherSuites: []uint16{tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384},
 		// TLS 1.2
 		MinVersion: tls.VersionTLS12,
 		NextProtos: []string{"h2"},
