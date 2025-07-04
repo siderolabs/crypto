@@ -5,10 +5,7 @@
 package x509
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -78,7 +75,9 @@ func NewCertificateAuthorityFromCertificateAndKey(p *PEMEncodedCertificateAndKey
 	}
 
 	var err error
-	if ca.Crt, err = p.GetCert(); err != nil {
+
+	ca.Crt, err = p.GetCert()
+	if err != nil {
 		return nil, err
 	}
 
@@ -92,18 +91,12 @@ func NewCertificateAuthorityFromCertificateAndKey(p *PEMEncodedCertificateAndKey
 
 // RSACertificateAuthority creates an RSA CA.
 func RSACertificateAuthority(template *x509.Certificate, opts *Options) (*CertificateAuthority, error) {
-	key, err := rsa.GenerateKey(rand.Reader, opts.Bits)
+	key, err := NewRSAKey(WithCopyOptions(opts))
 	if err != nil {
 		return nil, err
 	}
 
-	keyBytes := x509.MarshalPKCS1PrivateKey(key)
-	keyPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  PEMTypeRSAPrivate,
-		Bytes: keyBytes,
-	})
-
-	crtDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	crtDER, err := x509.CreateCertificate(rand.Reader, template, template, key.keyRSA.Public(), key.keyRSA)
 	if err != nil {
 		return nil, err
 	}
@@ -121,8 +114,8 @@ func RSACertificateAuthority(template *x509.Certificate, opts *Options) (*Certif
 	ca := &CertificateAuthority{
 		Crt:    crt,
 		CrtPEM: crtPEM,
-		Key:    key,
-		KeyPEM: keyPEM,
+		Key:    key.keyRSA,
+		KeyPEM: key.KeyPEM,
 	}
 
 	return ca, nil
@@ -130,22 +123,12 @@ func RSACertificateAuthority(template *x509.Certificate, opts *Options) (*Certif
 
 // ECDSACertificateAuthority creates an ECDSA CA.
 func ECDSACertificateAuthority(template *x509.Certificate) (*CertificateAuthority, error) {
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	key, err := NewECDSAKey()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create new ECDSA key: %w", err)
 	}
 
-	keyBytes, err := x509.MarshalECPrivateKey(key)
-	if err != nil {
-		return nil, err
-	}
-
-	keyPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  PEMTypeECPrivate,
-		Bytes: keyBytes,
-	})
-
-	crtDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	crtDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.keyEC.PublicKey, key.keyEC)
 	if err != nil {
 		return nil, err
 	}
@@ -163,8 +146,8 @@ func ECDSACertificateAuthority(template *x509.Certificate) (*CertificateAuthorit
 	ca := &CertificateAuthority{
 		Crt:    crt,
 		CrtPEM: crtPEM,
-		Key:    key,
-		KeyPEM: keyPEM,
+		Key:    key.keyEC,
+		KeyPEM: key.GetPrivateKeyPEM(),
 	}
 
 	return ca, nil
@@ -195,7 +178,7 @@ func Ed25519CertificateAuthority(template *x509.Certificate) (*CertificateAuthor
 	ca := &CertificateAuthority{
 		Crt:    crt,
 		CrtPEM: crtPEM,
-		Key:    key,
+		Key:    key.PrivateKey,
 		KeyPEM: key.PrivateKeyPEM,
 	}
 

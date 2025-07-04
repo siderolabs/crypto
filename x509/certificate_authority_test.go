@@ -5,6 +5,7 @@
 package x509_test
 
 import (
+	"crypto/tls"
 	stdx509 "crypto/x509"
 	"testing"
 
@@ -64,6 +65,12 @@ func TestNewCertificateAuthority(t *testing.T) {
 			t.Parallel()
 
 			ca, err := x509.NewSelfSignedCertificateAuthority(test.opts...)
+			require.NoError(t, err)
+
+			crt, err := x509.NewCertificateAndKey(ca.Crt, ca.Key)
+			require.NoError(t, err)
+
+			_, err = tls.X509KeyPair(crt.Crt, crt.Key)
 			require.NoError(t, err)
 
 			assert.Equal(t, test.expectedPublicKeyAlgorithm, ca.Crt.PublicKeyAlgorithm)

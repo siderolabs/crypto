@@ -145,6 +145,13 @@ func OverrideSubject(f func(*pkix.Name)) Option {
 	}
 }
 
+// WithCopyOptions copies the provided options to the Options struct.
+func WithCopyOptions(opts *Options) Option {
+	return func(o *Options) {
+		*o = *opts // Copy the provided options into the current options
+	}
+}
+
 // NewDefaultOptions initializes the Options struct with default values.
 func NewDefaultOptions(setters ...Option) *Options {
 	opts := &Options{

@@ -144,8 +144,10 @@ func (k *Ed25519Key) GetPublicKeyPEM() []byte {
 }
 
 // NewRSAKey generates an RSA key pair.
-func NewRSAKey() (*RSAKey, error) {
-	keyRSA, err := rsa.GenerateKey(rand.Reader, 4096)
+func NewRSAKey(opts ...Option) (*RSAKey, error) {
+	o := NewDefaultOptions(opts...)
+
+	keyRSA, err := rsa.GenerateKey(rand.Reader, o.Bits)
 	if err != nil {
 		return nil, err
 	}
