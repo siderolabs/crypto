@@ -146,7 +146,6 @@ func (p *certificateProvider) manageUpdates(ctx context.Context) error {
 		if c, _ := p.GetCertificate(nil); c != nil { //nolint:errcheck
 			if len(c.Certificate) > 0 {
 				crt, err := x509.ParseCertificate(c.Certificate[0])
-
 				if err == nil {
 					log.Printf("issued certificate with fingerprint %s\n", talosx509.SPKIFingerprint(crt))
 

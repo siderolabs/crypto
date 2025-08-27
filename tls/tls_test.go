@@ -53,8 +53,7 @@ func TestClientServer(t *testing.T) {
 		skipFIPS bool
 	}{
 		{
-			name:     "Ed25519",
-			skipFIPS: true, // Ed25519 key exchange is not supported in FIPS mode.
+			name: "Ed25519", // Go 1.25 with FIPS-140-3 strict allows Ed25519
 		},
 		{
 			name: "RSA",
@@ -182,7 +181,9 @@ func TestClientServer(t *testing.T) {
 						require.NoError(t, c.Close())
 					}()
 
-					conn, err := stdlibtls.Dial("tcp", listener.Addr().String(), clientTLSConfig)
+					conn, err := (&stdlibtls.Dialer{
+						Config: clientTLSConfig,
+					}).DialContext(t.Context(), "tcp", listener.Addr().String())
 					require.NoError(t, err)
 
 					t.Logf("Connected to server at %s", conn.RemoteAddr())

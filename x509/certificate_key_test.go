@@ -146,7 +146,8 @@ func TestCertificateKeyPEMOpenSSLInterop(t *testing.T) {
 			tmpDir := t.TempDir()
 
 			// generate a new self-signed certificate and key
-			output, err := exec.Command(
+			output, err := exec.CommandContext(
+				t.Context(),
 				"openssl",
 				slices.Concat(
 					slices.Concat([]string{"req"}, test.opensslArgs),

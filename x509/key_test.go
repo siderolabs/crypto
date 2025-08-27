@@ -202,7 +202,7 @@ func TestKeyPEMOpenSSLInterop(t *testing.T) {
 
 		tmpDir := t.TempDir()
 
-		require.NoError(t, exec.Command("openssl", "genrsa", "-out", filepath.Join(tmpDir, "key.pem"), "2048").Run())
+		require.NoError(t, exec.CommandContext(t.Context(), "openssl", "genrsa", "-out", filepath.Join(tmpDir, "key.pem"), "2048").Run())
 
 		key, err := x509.NewKeyFromFile(filepath.Join(tmpDir, "key.pem"))
 		require.NoError(t, err)
@@ -218,7 +218,7 @@ func TestKeyPEMOpenSSLInterop(t *testing.T) {
 
 		tmpDir := t.TempDir()
 
-		require.NoError(t, exec.Command("openssl", "genpkey", "-algorithm", "ED25519", "-out", filepath.Join(tmpDir, "key.pem")).Run())
+		require.NoError(t, exec.CommandContext(t.Context(), "openssl", "genpkey", "-algorithm", "ED25519", "-out", filepath.Join(tmpDir, "key.pem")).Run())
 
 		key, err := x509.NewKeyFromFile(filepath.Join(tmpDir, "key.pem"))
 		require.NoError(t, err)
@@ -234,7 +234,7 @@ func TestKeyPEMOpenSSLInterop(t *testing.T) {
 
 		tmpDir := t.TempDir()
 
-		require.NoError(t, exec.Command("openssl", "ecparam", "-name", "prime256v1", "-genkey", "-noout", "-out", filepath.Join(tmpDir, "key.pem")).Run())
+		require.NoError(t, exec.CommandContext(t.Context(), "openssl", "ecparam", "-name", "prime256v1", "-genkey", "-noout", "-out", filepath.Join(tmpDir, "key.pem")).Run())
 
 		key, err := x509.NewKeyFromFile(filepath.Join(tmpDir, "key.pem"))
 		require.NoError(t, err)
