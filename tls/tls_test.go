@@ -157,11 +157,7 @@ func TestClientServer(t *testing.T) {
 
 					var wg sync.WaitGroup
 
-					wg.Add(1)
-
-					go func() {
-						defer wg.Done()
-
+					wg.Go(func() {
 						c, aerr := listener.Accept()
 						require.NoError(t, aerr)
 
@@ -179,7 +175,7 @@ func TestClientServer(t *testing.T) {
 						}
 
 						require.NoError(t, c.Close())
-					}()
+					})
 
 					conn, err := (&stdlibtls.Dialer{
 						Config: clientTLSConfig,

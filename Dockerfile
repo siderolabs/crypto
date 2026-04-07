@@ -1,21 +1,21 @@
-# syntax = docker/dockerfile-upstream:1.18.0-labs
+# syntax = docker/dockerfile-upstream:1.22.0-labs
 
 # THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
 #
-# Generated on 2025-09-26T17:24:24Z by kres fdbc9fc.
+# Generated on 2026-04-07T10:55:57Z by kres 3675077.
 
-ARG TOOLCHAIN
+ARG TOOLCHAIN=scratch
 
 # cleaned up specs and compiled versions
 FROM scratch AS generate
 
 # runs markdownlint
-FROM docker.io/oven/bun:1.2.22-alpine AS lint-markdown
+FROM docker.io/oven/bun:1.3.10-alpine AS lint-markdown
 WORKDIR /src
-RUN bun i markdownlint-cli@0.45.0 sentences-per-line@0.3.0
+RUN bun i markdownlint-cli@0.48.0 sentences-per-line@0.5.2
 COPY .markdownlint.json .
 COPY ./README.md ./README.md
-RUN bunx markdownlint --ignore "CHANGELOG.md" --ignore "**/node_modules/**" --ignore '**/hack/chglog/**' --rules sentences-per-line .
+RUN bunx markdownlint --ignore "CHANGELOG.md" --ignore "**/node_modules/**" --ignore '**/hack/chglog/**' --rules markdownlint-sentences-per-line .
 
 # base toolchain image
 FROM --platform=${BUILDPLATFORM} ${TOOLCHAIN} AS toolchain

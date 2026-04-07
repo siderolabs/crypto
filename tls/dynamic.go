@@ -17,7 +17,7 @@ import (
 
 // DynamicCertificate is a certificate that can be reloaded from disk.
 type DynamicCertificate struct {
-	cert     tls.Certificate
+	cert     *tls.Certificate
 	certFile string
 	keyFile  string
 	mu       sync.Mutex
@@ -43,7 +43,7 @@ func (c *DynamicCertificate) Load() error {
 	defer c.mu.Unlock()
 
 	c.loaded = true
-	c.cert = cert
+	c.cert = &cert
 
 	return nil
 }
@@ -59,7 +59,7 @@ func (c *DynamicCertificate) GetCertificate(*tls.ClientHelloInfo) (*tls.Certific
 		return nil, fmt.Errorf("the cert wasn't loaded yet")
 	}
 
-	return &c.cert, nil
+	return c.cert, nil
 }
 
 // Watch the certificate files for changes and reload them.

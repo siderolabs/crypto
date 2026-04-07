@@ -145,9 +145,8 @@ func defaultConfig() *tls.Config {
 		RootCAs:                x509.NewCertPool(),
 		ClientCAs:              x509.NewCertPool(),
 		SessionTicketsDisabled: true,
-		// TLS 1.2
-		MinVersion: tls.VersionTLS12,
-		NextProtos: []string{"h2"},
+		MinVersion:             tls.VersionTLS13,
+		NextProtos:             []string{"h2"},
 	}
 }
 
