@@ -7,7 +7,9 @@ package x509
 import (
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/asn1"
 	"net"
+	"net/url"
 	"time"
 )
 
@@ -20,11 +22,15 @@ type Options struct {
 	SignatureAlgorithm x509.SignatureAlgorithm
 	IPAddresses        []net.IP
 	DNSNames           []string
+	URIs               []*url.URL
 	Bits               int
 	NotAfter           time.Time
 	NotBefore          time.Time
 	KeyUsage           x509.KeyUsage
 	ExtKeyUsage        []x509.ExtKeyUsage
+
+	// UnknownExtKeyUsage is a list of custom extended key usage OIDs (not covered by ExtKeyUsage constants).
+	UnknownExtKeyUsage []asn1.ObjectIdentifier
 
 	// Used with CSR signing process to override fields in the certificate subject.
 	OverrideSubject func(*pkix.Name)
@@ -70,6 +76,17 @@ func DNSNames(o []string) Option {
 	}
 }
 
+// URIs sets the value for the URIs in Subject Alternate Name of
+// the certificate.
+//
+// When signing a CSR, URIs from the CSR are never copied to the certificate,
+// only the URIs set via this option are used.
+func URIs(o []*url.URL) Option {
+	return func(opts *Options) {
+		opts.URIs = o
+	}
+}
+
 // Bits sets the bit size of the RSA key pair.
 func Bits(o int) Option {
 	return func(opts *Options) {
@@ -88,6 +105,15 @@ func KeyUsage(o x509.KeyUsage) Option {
 func ExtKeyUsage(o []x509.ExtKeyUsage) Option {
 	return func(opts *Options) {
 		opts.ExtKeyUsage = o
+	}
+}
+
+// UnknownExtKeyUsage sets the custom extended key usage OIDs, which are not covered by ExtKeyUsage* constants.
+//
+// When signing a CSR, extended key usages are always set by the signer, and never copied from the CSR.
+func UnknownExtKeyUsage(o []asn1.ObjectIdentifier) Option {
+	return func(opts *Options) {
+		opts.UnknownExtKeyUsage = o
 	}
 }
 

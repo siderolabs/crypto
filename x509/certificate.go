@@ -24,6 +24,10 @@ type PEMEncodedCertificate struct {
 }
 
 // NewCertificateFromCSR creates and signs X.509 certificate using the provided CSR.
+//
+// Only the subject, DNS names and IP addresses are copied from the CSR, all other
+// certificate fields (key usage, extended key usage, URIs, etc.) are controlled by the signer
+// via the options.
 func NewCertificateFromCSR(ca *x509.Certificate, key any, csr *x509.CertificateRequest, setters ...Option) (*Certificate, error) {
 	opts := NewDefaultOptions(setters...)
 
@@ -50,10 +54,14 @@ func NewCertificateFromCSR(ca *x509.Certificate, key any, csr *x509.CertificateR
 		NotAfter:              opts.NotAfter,
 		KeyUsage:              opts.KeyUsage,
 		ExtKeyUsage:           opts.ExtKeyUsage,
+		UnknownExtKeyUsage:    opts.UnknownExtKeyUsage,
 		BasicConstraintsValid: false,
 		IsCA:                  false,
 		IPAddresses:           csr.IPAddresses,
 		DNSNames:              csr.DNSNames,
+		// URIs are never copied from the CSR, as they might be used to carry identity
+		// (e.g. SPIFFE), so they are controlled only by the signer.
+		URIs: opts.URIs,
 	}
 
 	if opts.OverrideSubject != nil {

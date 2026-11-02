@@ -31,6 +31,7 @@ func NewCertificateSigningRequest(key any, setters ...Option) (*CertificateSigni
 	template := &x509.CertificateRequest{
 		IPAddresses: opts.IPAddresses,
 		DNSNames:    opts.DNSNames,
+		URIs:        opts.URIs,
 		Subject: pkix.Name{
 			CommonName:   opts.CommonName,
 			Organization: opts.Organizations,
